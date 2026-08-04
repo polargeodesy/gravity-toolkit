@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 mascon_reconstruct.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2026)
 
 Calculates the equivalent spherical harmonics from a mascon time series
 
@@ -76,6 +76,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 08/2026: use default file logger for valid and failed program runs
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 02/2023: use love numbers class with additional attributes
     Updated 12/2022: single implicit import of gravity toolkit
@@ -129,12 +130,14 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(pathlib.Path(sys.argv[0]).name)
-    logging.info(args)
-    logging.info(f'module name: {__name__}')
+    # get logger
+    logger = logging.getLogger(__name__)
+    logger.info(pathlib.Path(sys.argv[0]).name)
+    logger.info(args)
+    logger.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info(f'parent process: {os.getppid():d}')
-    logging.info(f'process id: {os.getpid():d}')
+        logger.info(f'parent process: {os.getppid():d}')
+    logger.info(f'process id: {os.getpid():d}')
 
 
 # PURPOSE: Reconstruct spherical harmonic fields from the mascon
@@ -489,7 +492,9 @@ def main():
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # try to run the analysis with listed parameters
     try:
@@ -520,8 +525,8 @@ def main():
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
-        logging.critical(f'process id {os.getpid():d} failed')
-        logging.error(traceback.format_exc())
+        logger.critical(f'process id {os.getpid():d} failed')
+        logger.error(traceback.format_exc())
 
 
 # run main program

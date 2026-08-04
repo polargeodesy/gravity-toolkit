@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 aod1b_oblateness.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2026)
 Contributions by Hugo Lecomte (03/2021)
 
 Reads GRACE/GRACE-FO level-1b dealiasing data files for a specific product
@@ -33,6 +33,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 08/2026: use default file logger for valid and failed program runs
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: debug-level logging of member names and header lines
     Updated 12/2022: single implicit import of gravity toolkit
@@ -93,7 +94,8 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775):
     MODE: Permission mode of directories and files
     VERBOSE: Output information for each output file
     """
-
+    # get logger
+    logger = logging.getLogger(__name__)
     # compile regular expressions operators for file dates
     # will extract the year and month from the tar file (.tar.gz)
     tx = re.compile(r'AOD1B_(\d+)-(\d+)_\d+\.(tar\.gz|tgz)$', re.VERBOSE)
@@ -172,7 +174,7 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775):
         # or will rewrite if CLOBBER is set (if wanting something changed)
         if TEST or CLOBBER:
             # if verbose: output information about the oblateness file
-            logging.info(f'{str(output_file)}{OVERWRITE}')
+            logger.info(f'{str(output_file)}{OVERWRITE}')
             # open output monthly oblateness file
             f = output_file.open(mode='w', encoding='utf8')
             args = ('Oblateness time series', DREL, DSET)
@@ -186,7 +188,7 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775):
             # Iterate over every member within the tar file
             for member in tar.getmembers():
                 # track tar file members
-                logging.debug(member.name)
+                logger.debug(member.name)
                 # get calendar day from file
                 DD, SFX = fx.findall(member.name).pop()
                 DD = np.int64(DD)
@@ -208,7 +210,7 @@ def aod1b_oblateness(base_dir, DREL='', DSET='', CLOBBER=False, MODE=0o775):
                     # find file header for data product
                     if bool(hx.search(file_contents)):
                         # track file header lines
-                        logging.debug(file_contents)
+                        logger.debug(file_contents)
                         # extract hour from header and convert to float
                         (HH,) = re.findall(r'(\d+):\d+:\d+', file_contents)
                         hours[c] = np.int64(HH)
@@ -311,7 +313,9 @@ def main():
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # for each entered AOD1B dataset
     for DSET in args.product:

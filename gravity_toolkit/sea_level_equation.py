@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-sea_level_equation.py (07/2026)
+sea_level_equation.py (08/2026)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -90,6 +90,7 @@ REFERENCES:
         https://doi.org/10.1029/JB090iB11p09363
 
 UPDATE HISTORY:
+    Updated 08/2026: use upstream file logger for verbose output
     Updated 07/2026: use np.einsum for spherical harmonic summations
         use np.radians to convert from degrees to radians
     Updated 06/2025: added option to set the density of sea water (g/cm^3)
@@ -206,6 +207,8 @@ def sea_level_equation(
         spatial field calculated using sea level solver
     """
 
+    # get logger
+    logger = logging.getLogger(__name__)
     # dimensions of land function
     nphi, nth = np.shape(land_function)
     # calculate colatitude and longitude in radians
@@ -334,8 +337,8 @@ def sea_level_equation(
     sea_height = -tmass / rho_water / rad_e**2 / ocean_area
 
     # if verbose output: print ocean area and uniform sea level height
-    logging.info(f'Total Ocean Area: {ocean_area:0.10g}')
-    logging.info(f'Uniform Ocean Height: {sea_height:0.10g}')
+    logger.info(f'Total Ocean Area: {ocean_area:0.10g}')
+    logger.info(f'Uniform Ocean Height: {sea_height:0.10g}')
 
     # allocate for output sea level field
     sea_level = np.empty((nphi, nth))
@@ -386,9 +389,9 @@ def sea_level_equation(
         sea_height = (-tmass / rho_water / rad_e**2 - rmass) / ocean_area
 
         # if verbose output: print iteration, mass and anomaly for convergence
-        logging.info(f'Iteration: {n_iter:d}')
-        logging.info(f'Integrated Ocean Height: {rmass:0.10g}')
-        logging.info(f'Difference from Initial Height: {sea_height:0.10g}')
+        logger.info(f'Iteration: {n_iter:d}')
+        logger.info(f'Integrated Ocean Height: {rmass:0.10g}')
+        logger.info(f'Difference from Initial Height: {sea_height:0.10g}')
 
         # geoid component is split into two parts (Kendall 2005)
         # this part is the spatially uniform shift in the geoid that is
@@ -409,8 +412,8 @@ def sea_level_equation(
     # calculate final total mass for sanity check
     omass = 4.0 * np.pi * (rad_e**2.0) * rho_water * height_Ylms.clm[0, 0]
     # if verbose output: sanity check of masses
-    logging.info(f'Original Total Ocean Mass: {-tmass / 1e15:0.10g}')
-    logging.info(f'Final Iterated Ocean Mass: {omass / 1e15:0.10g}')
+    logger.info(f'Original Total Ocean Mass: {-tmass / 1e15:0.10g}')
+    logger.info(f'Final Iterated Ocean Mass: {omass / 1e15:0.10g}')
 
     # set final invalid points to fill value if applicable
     if FILL_VALUE != 0:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 read_love_numbers.py
-Written by Tyler Sutterley (07/2026)
+Written by Tyler Sutterley (08/2026)
 
 Reads sets of load Love numbers from PREM and applies isomorphic parameters
 Linearly interpolates load Love/Shida numbers for missing degrees
@@ -56,6 +56,7 @@ REFERENCES:
         103(B12), 30205-30229, (1998)
 
 UPDATE HISTORY:
+    Updated 08/2026: use upstream file logger for verbose output
     Updated 07/2026: add HTML representation of love_numbers class
     Updated 11/2024: allow reading where degree is infinite
     Updated 05/2024: make subscriptable and allow item assignment
@@ -354,6 +355,8 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     ll: np.ndarray
         Love (Shida) number of Horizontal Displacement
     """
+    # get logger
+    logger = logging.getLogger(__name__)
     # load Love/Shida numbers file
     if LOVE_NUMBERS == 0:
         # PREM outputs from Han and Wahr (1995)
@@ -406,7 +409,7 @@ def load_love_numbers(LMAX, LOVE_NUMBERS=0, REFERENCE='CF', FORMAT='tuple'):
     # validate as pathlib object
     love_numbers_file = pathlib.Path(love_numbers_file).expanduser().absolute()
     # log load Love/Shida numbers file if debugging
-    logging.debug(f'Reading Love/Shida numbers file: {str(love_numbers_file)}')
+    logger.debug(f'Reading Love/Shida numbers file: {str(love_numbers_file)}')
     # LMAX of load Love/Shida numbers from Han and Wahr (1995) is 696.
     # from Wahr (2007) linearly interpolating kl works
     # however, as we are linearly extrapolating out, do not make

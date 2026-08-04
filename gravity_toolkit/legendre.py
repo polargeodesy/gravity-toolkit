@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 legendre.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (08/2026)
 Computes associated Legendre functions of degree l evaluated for elements x
 l must be a scalar integer and x must contain real values ranging -1 <= x <= 1
 Parallels the MATLAB legendre function
@@ -29,6 +29,7 @@ REFERENCES:
     J. A. Jacobs, "Geomagnetism", Academic Press, 1987, Ch.4.
 
 UPDATE HISTORY:
+    Updated 08/2026: fixes for typing error with numpy updates
     Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 11/2021: modify normalization to prevent high degree overflows
@@ -45,7 +46,7 @@ import numpy as np
 
 
 def legendre(l, x, NORMALIZE=False):
-    """
+    r"""
     Computes associated Legendre functions for a particular degree
     following :cite:t:`Abramowitz:1965vw,Jacobs:1987vv`
 
@@ -56,7 +57,8 @@ def legendre(l, x, NORMALIZE=False):
     x: np.ndarray
         elements ranging from -1 to 1
 
-        Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
+        Typically :math:`\cos(\theta)`, where :math:`\theta`
+        is the colatitude in radians
     NORMALIZE: bool, default False
         Fully-normalize the Legendre Functions
 
@@ -71,6 +73,9 @@ def legendre(l, x, NORMALIZE=False):
     x = np.atleast_1d(x).flatten()
     # size of the x array
     nx = len(x)
+    # tolerances for underflow
+    tol = np.sqrt(np.finfo(np.float64).tiny)
+    tstart = np.finfo(np.float64).eps
 
     # for the l = 0 case
     if l == 0:
@@ -79,33 +84,33 @@ def legendre(l, x, NORMALIZE=False):
 
     # for all other degrees greater than 0
     rootl = np.sqrt(np.arange(0, 2 * l + 1))  # +1 to include 2*l
-    # s is sine of colatitude (cosine of latitude) so that 0 <= s <= 1
-    s = np.sqrt(1.0 - x**2)  # for x=cos(th): s=sin(th)
+    # u is sine of colatitude (cosine of latitude) so that 0 <= u <= 1
+    u = np.sqrt(1.0 - x**2)
     P = np.zeros((l + 3, nx), dtype=np.float64)
+    # sine of -colatitude to power l
+    upow = np.power(-u, l)
 
-    # Find values of x,s for which there will be underflow
-    sn = (-s) ** l
-    tol = np.sqrt(np.finfo(np.float64).tiny)
-    count = np.count_nonzero((s > 0) & (np.abs(sn) <= tol))
-    if count > 0:
-        (ind,) = np.nonzero((s > 0) & (np.abs(sn) <= tol))
-        # Approximate solution of x*ln(x) = Pl
-        v = 9.2 - np.log(tol) / (l * s[ind])
+    # calculate legendre polynomials for underflow cases
+    if np.any((u > 0) & (np.abs(upow) <= tol)):
+        # find indices where the power terms are small
+        ind = np.flatnonzero((u > 0) & (np.abs(upow) <= tol))
+        # approximate solution of x*ln(x) = Pl
+        v = 9.2 - np.log(tol) / (l * u[ind])
         w = 1.0 / np.log(v)
-        m1 = 1 + l * s[ind] * v * w * (1.0058 + w * (3.819 - w * 12.173))
+        m1 = 1 + l * u[ind] * v * w * (1.0058 + w * (3.819 - w * 12.173))
         m1 = np.where(l < np.floor(m1), l, np.floor(m1)).astype(np.int64)
-        # Column-by-column recursion
+        # column-by-column recursion
         for k, mm1 in enumerate(m1):
             col = ind[k]
-            # Calculate two*cotangent for underflow case
-            twocot = -2.0 * x[col] / s[col]
+            # calculate two*cotangent for underflow case
+            twocot = -2.0 * x[col] / u[col]
             P[mm1 - 1 : l + 1, col] = 0.0
-            # Start recursion with proper sign
-            tstart = np.finfo(np.float64).eps
+            # start recursion with proper sign
             P[mm1 - 1, col] = np.sign(np.fmod(mm1, 2) - 0.5) * tstart
             if x[col] < 0:
                 P[mm1 - 1, col] = np.sign(np.fmod(l + 1, 2) - 0.5) * tstart
-            # Recur from m1 to m = 0, accumulating normalizing factor.
+            # backwards recursion from m1 to m = 0
+            # accumulate the normalization factor
             sumsq = tol.copy()
             for m in range(mm1 - 2, -1, -1):
                 P[m, col] = (
@@ -117,41 +122,49 @@ def legendre(l, x, NORMALIZE=False):
             scale = 1.0 / np.sqrt(2.0 * sumsq - P[0, col] ** 2)
             P[0 : mm1 + 1, col] = scale * P[0 : mm1 + 1, col]
 
-    # Find the values of x,s for which there is no underflow, and (x != +/-1)
-    count = np.count_nonzero((x != 1) & (np.abs(sn) >= tol))
-    if count > 0:
-        (nind,) = np.nonzero((x != 1) & (np.abs(sn) >= tol))
-        # Calculate two*cotangent for normal case
-        twocot = -2.0 * x[nind] / s[nind]
-        # Produce normalization constant for the m = l function
+    # calculate legendre polynomials for most (normal) cases
+    # (no underflow and not polar)
+    if np.any((x != 1) & (np.abs(upow) >= tol)):
+        # find indices where the power terms are above tolerance
+        ind = np.flatnonzero((x != 1) & (np.abs(upow) >= tol))
+        # calculate two*cotangent for normal case
+        twocot = -2.0 * x[ind] / u[ind]
+        # produce normalization constant for the m = l function
         d = np.arange(2, 2 * l + 2, 2)
         c = np.prod(1.0 - 1.0 / d)
-        # Use sn = (-s)**l (written above) to write the m = l function
-        P[l, nind] = np.sqrt(c) * sn[nind]
-        P[l - 1, nind] = P[l, nind] * twocot * l / rootl[-1]
-
-        # Recur downwards to m = 0
+        # calculate for degree l and use backwards recursion for other degrees
+        P[l, ind] = np.sqrt(c) * upow[ind]
+        P[l - 1, ind] = P[l, ind] * twocot * l / rootl[-1]
+        # recur downwards to m = 0
         for m in range(l - 2, -1, -1):
-            P[m, nind] = (
-                P[m + 1, nind] * twocot * (m + 1)
-                - P[m + 2, nind] * rootl[l + m + 2] * rootl[l - m - 1]
+            P[m, ind] = (
+                P[m + 1, ind] * twocot * (m + 1)
+                - P[m + 2, ind] * rootl[l + m + 2] * rootl[l - m - 1]
             ) / (rootl[l + m + 1] * rootl[l - m])
 
-    # calculate Pl from P
-    Pl = np.copy(P[0 : l + 1, :])
+    # polar case (x == +/-1)
+    if np.any(u == 0):
+        # find indices for values at the poles
+        u0 = np.flatnonzero(u == 0)
+        P[0, u0] = np.power(x[u0], l)
 
-    # Polar argument (x == +/-1)
-    count = np.count_nonzero(s == 0)
-    if count > 0:
-        (s0,) = np.nonzero(s == 0)
-        Pl[0, s0] = x[s0] ** l
+    # calculate Pl from P
+    # and truncate to degree l
+    Pl = np.copy(P[0 : l + 1, :])
 
     # calculate Fully Normalized Associated Legendre functions
     if NORMALIZE:
+        # allocate for normalization array
         norm = np.zeros((l + 1))
+        # normalization for degree 0
         norm[0] = np.sqrt(2.0 * l + 1)
+        # normalization for all other degrees
         m = np.arange(1, l + 1)
-        norm[1:] = (-1) ** m * np.sqrt(2.0 * (2.0 * l + 1.0))
+        # apply the Condon-Shortley phase
+        cs = np.power(-1.0, m)
+        norm[1:] = cs * np.sqrt(2.0 * (2.0 * l + 1.0))
+        # apply normalization to each row of Pl
+        # reshape the normalization array to be compatible with Pl
         Pl *= np.kron(np.ones((1, nx)), norm[:, np.newaxis])
     else:
         # Calculate the unnormalized Legendre functions by multiplying each row
@@ -162,4 +175,5 @@ def legendre(l, x, NORMALIZE=False):
         # sectoral case (l = m) should be done separately to handle 0!
         Pl[l, :] *= np.prod(rootl[1:])
 
+    # return the legendre polynomials
     return Pl

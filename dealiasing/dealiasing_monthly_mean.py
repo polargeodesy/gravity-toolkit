@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 dealiasing_monthly_mean.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2026)
 
 Reads GRACE/GRACE-FO AOD1B datafiles for a specific product and outputs monthly
     the mean for a specific GRACE/GRACE-FO processing center and data release
@@ -48,6 +48,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 08/2026: use default file logger for valid and failed program runs
     Updated 05/2023: use formatting for reading from date file
         use pathlib to define and operate on paths
     Updated 03/2023: read data into flattened harmonics objects
@@ -115,6 +116,8 @@ def dealiasing_monthly_mean(
     CLOBBER=False,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # output data suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')
     # aod1b data products
@@ -317,7 +320,7 @@ def dealiasing_monthly_mean(
         # if there are new files, files to be rewritten or clobbered
         if COMPLETE and (TEST or CLOBBER):
             # if verbose: output information about the output file
-            logging.info(f'{FILE} ({OVERWRITE})')
+            logger.info(f'{FILE} ({OVERWRITE})')
             # allocate for the mean output harmonics
             Ylms = gravtk.harmonics(lmax=LMAX, mmax=LMAX)
             # number of time points
@@ -346,7 +349,7 @@ def dealiasing_monthly_mean(
                 ]
                 for member in monthly_members:
                     # track tar file members
-                    logging.debug(member.name)
+                    logger.debug(member.name)
                     # extract member name
                     YMD, SFX = fx.findall(member.name).pop()
                     YY, MM, DD = re.findall(r'\d+', YMD)
@@ -364,7 +367,7 @@ def dealiasing_monthly_mean(
                         # find file header for data product
                         if bool(hx.search(file_contents)):
                             # track file header lines
-                            logging.debug(file_contents)
+                            logger.debug(file_contents)
                             # extract hour from header and convert to float
                             (HH,) = re.findall(r'(\d+):\d+:\d+', file_contents)
                             # convert dates to int and save to arrays
@@ -441,7 +444,7 @@ def dealiasing_monthly_mean(
             OUTPUT_FILE.chmod(mode=MODE)
         # log if dataset is incomplete
         elif not COMPLETE:
-            logging.info(f'File {FILE} not output (incomplete)')
+            logger.info(f'File {FILE} not output (incomplete)')
 
     # if outputting as spherical harmonic model files
     if DATAFORM == 'SHM':
@@ -460,7 +463,7 @@ def dealiasing_monthly_mean(
         grace_index_file.chmod(mode=MODE)
 
     # print completion flag
-    logging.info(f'Complete: {PROC}/{DREL}/{DSET}')
+    logger.info(f'Complete: {PROC}/{DREL}/{DSET}')
     # close the output date file
     f_out.close()
 
@@ -514,7 +517,7 @@ class dealiasing(gravtk.harmonics):
         self.filename = pathlib.Path(filename).expanduser().absolute()
         # set default verbosity
         kwargs.setdefault('verbose', False)
-        logging.info(str(self.filename))
+        self.logger.info(str(self.filename))
         # open the output file
         if self.gzip:
             fid = gzip.open(self.filename, 'wt')
@@ -902,7 +905,9 @@ def main():
 
     # create logger for verbosity level
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     for DSET in args.product:
         # run monthly mean AOD1b program with parameters

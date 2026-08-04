@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 grace_raster_grids.py
-Written by Tyler Sutterley (06/2024)
+Written by Tyler Sutterley (08/2026)
 
 Reads in GRACE/GRACE-FO spherical harmonic coefficients and exports
     projected spatial fields
@@ -147,6 +147,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for files
 
 UPDATE HISTORY:
+    Updated 08/2026: use default file logger for valid and failed program runs
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 03/2024: increase mask buffer to twice the smoothing radius
     Written 08/2023
@@ -172,12 +173,14 @@ pyproj = gravtk.utilities.import_dependency('pyproj')
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(pathlib.Path(sys.argv[0]).name)
-    logging.info(args)
-    logging.info(f'module name: {__name__}')
+    # get logger
+    logger = logging.getLogger(__name__)
+    logger.info(pathlib.Path(sys.argv[0]).name)
+    logger.info(args)
+    logger.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info(f'parent process: {os.getppid():d}')
-    logging.info(f'process id: {os.getpid():d}')
+        logger.info(f'parent process: {os.getppid():d}')
+    logger.info(f'process id: {os.getpid():d}')
 
 
 # PURPOSE: try to get the projection information
@@ -245,6 +248,8 @@ def grace_raster_grids(
     FILE_PREFIX=None,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # recursively create output directory if not currently existing
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
@@ -534,7 +539,7 @@ def grace_raster_grids(
     # converting harmonics to truncated, smoothed coefficients in units
     # combining harmonics to calculate output raster grids
     for i, grace_month in enumerate(GRACE_Ylms.month):
-        logging.debug(grace_month)
+        logger.debug(grace_month)
         # GRACE/GRACE-FO harmonics for time t
         Ylms = GRACE_Ylms.index(i)
         # Remove GIA rate for time
@@ -583,47 +588,6 @@ def grace_raster_grids(
 
     # return the list of output files
     return output_files
-
-
-# PURPOSE: print a file log for the GRACE analysis
-def output_log_file(input_arguments, output_files):
-    # format: GRACE_processing_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
-    LOGFILE = 'GRACE_processing_run_{0}_PID-{1:d}.log'.format(*args)
-    # create a unique log and open the log file
-    DIRECTORY = pathlib.Path(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
-    logging.basicConfig(stream=fid, level=logging.INFO)
-    # print argument values sorted alphabetically
-    logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(input_arguments).items()):
-        logging.info(f'{arg}: {value}')
-    # print output files
-    logging.info('\n\nOUTPUT FILES:')
-    for f in output_files:
-        logging.info(f)
-    # close the log file
-    fid.close()
-
-
-# PURPOSE: print a error file log for the GRACE analysis
-def output_error_log_file(input_arguments):
-    # format: GRACE_processing_failed_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
-    LOGFILE = 'GRACE_processing_failed_run_{0}_PID-{1:d}.log'.format(*args)
-    # create a unique log and open the log file
-    DIRECTORY = pathlib.Path(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
-    logging.basicConfig(stream=fid, level=logging.INFO)
-    # print argument values sorted alphabetically
-    logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(input_arguments).items()):
-        logging.info(f'{arg}: {value}')
-    # print traceback error
-    logging.info('\n\nTRACEBACK ERROR:')
-    traceback.print_exc(file=fid)
-    # close the log file
-    fid.close()
 
 
 # PURPOSE: create argument parser
@@ -998,8 +962,8 @@ def arguments():
         help='Land-sea mask for redistributing land water flux',
     )
     # Output log file for each job in forms
-    # GRACE_processing_run_2002-04-01_PID-00000.log
-    # GRACE_processing_failed_run_2002-04-01_PID-00000.log
+    # validrun_2002-04-01T00:00:00_PID-00000.log
+    # failedrun_2002-04-01T00:00:00_PID-00000.log
     parser.add_argument(
         '--log',
         default=False,
@@ -1034,7 +998,9 @@ def main():
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # try to run the analysis with listed parameters
     try:
@@ -1087,13 +1053,24 @@ def main():
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
-        logging.critical(f'process id {os.getpid():d} failed')
-        logging.error(traceback.format_exc())
+        logger.critical(f'process id {os.getpid():d} failed')
+        logger.error(traceback.format_exc())
         if args.log:  # write failed job completion log file
-            output_error_log_file(args)
+            logfile = gravtk.utilities.create_log_file(
+                'failedrun',
+                filename=pathlib.Path(sys.argv[0]).name,
+                arguments=vars(args),
+            )
+            logger.info(logfile)
     else:
         if args.log:  # write successful job completion log file
-            output_log_file(args, output_files)
+            logfile = gravtk.utilities.create_log_file(
+                'validrun',
+                filename=pathlib.Path(sys.argv[0]).name,
+                arguments=vars(args),
+                output=output_files,
+            )
+            logger.info(logfile)
 
 
 # run main program

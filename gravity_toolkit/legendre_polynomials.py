@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 legendre_polynomials.py
-Written by Tyler Sutterley (11/2024)
+Written by Tyler Sutterley (08/2026)
 
 Computes fully normalized Legendre polynomials for an array of x values
     and their first derivative
@@ -33,6 +33,7 @@ REFERENCES:
         http://www.springerlink.com/content/978-3-211-33544-4
 
 UPDATE HISTORY:
+    Updated 08/2026: fixes for typing error with numpy updates
     Updated 11/2024: add polar argument for x == +/-1 to prevent drift
     Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -49,7 +50,7 @@ import numpy as np
 
 
 def legendre_polynomials(lmax, x, ASTYPE=np.float64):
-    """
+    r"""
     Computes fully-normalized Legendre polynomials and their first derivative
     following :cite:t:`HofmannWellenhof:2006hy`
 
@@ -60,7 +61,8 @@ def legendre_polynomials(lmax, x, ASTYPE=np.float64):
     x: np.ndarray
         elements ranging from -1 to 1
 
-        Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
+        Typically :math:`\cos(\theta)`, where :math:`\theta`
+        is the colatitude in radians
     ASTYPE: np.dtype, default np.float64
         output variable data type
 
@@ -88,7 +90,7 @@ def legendre_polynomials(lmax, x, ASTYPE=np.float64):
     # for x=cos(th): u=sin(th)
     u = np.sqrt(1.0 - x**2)
     # update where u==0 to eps of data type to prevent invalid divisions
-    (u0,) = np.nonzero(u == 0)
+    u0 = np.flatnonzero(u == 0)
     u[u0] = np.finfo(u.dtype).eps
 
     # Initialize the recurrence relation

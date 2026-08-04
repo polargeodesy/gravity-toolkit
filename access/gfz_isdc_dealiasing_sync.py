@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 gfz_isdc_dealiasing_sync.py
-Written by Tyler Sutterley (10/2025)
+Written by Tyler Sutterley (08/2026)
 Syncs GRACE Level-1b dealiasing products from the GFZ Information
     System and Data Center (ISDC)
 
@@ -31,6 +31,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 08/2026: change formatting and output of file logs
     Updated 10/2025: switch to https as ftp server is being retired
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: increase default year range to sync
@@ -89,11 +90,15 @@ def gfz_isdc_dealiasing_sync(
         # format: GFZ_AOD1B_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d', time.localtime())
         LOGFILE = base_dir.joinpath(f'GFZ_AOD1B_sync_{today}.log')
-        logging.basicConfig(filename=LOGFILE, level=logging.INFO)
-        logging.info(f'GFZ AOD1b Sync Log ({today})')
+        fid1 = LOGFILE.open(mode='w', encoding='utf8')
+        logger = gravtk.utilities.build_logger(
+            __name__, level=logging.INFO, stream=fid1
+        )
+        logger.info(f'GFZ AOD1b Sync Log ({today})')
+        logger.info(f'Filename: {pathlib.Path(sys.argv[0]).name}')
     else:
-        # standard output (terminal output)
-        logging.basicConfig(level=logging.INFO)
+        # build logger for standard output (terminal output)
+        logger = gravtk.utilities.build_logger(__name__, level=logging.INFO)
 
     # GFZ ISDC https host
     HOST = 'https://isdc-data.gfz.de/'
@@ -154,7 +159,7 @@ def gfz_isdc_dealiasing_sync(
                         Y,
                         fi,
                     ]
-                    logging.info(posixpath.join(*remote))
+                    logger.info(posixpath.join(*remote))
                     # retrieve bytes from remote file
                     remote_buffer = gravtk.utilities.from_sync(
                         remote, timeout=TIMEOUT
@@ -166,7 +171,7 @@ def gfz_isdc_dealiasing_sync(
                     tar.addfile(tarinfo=tar_info, fileobj=remote_buffer)
                 # close tar file and set permissions level to MODE
                 tar.close()
-                logging.info(f' --> {local_tar_file}\n')
+                logger.info(f' --> {local_tar_file}\n')
                 local_tar_file.chmod(mode=MODE)
             elif (file_count > 0) and not TAR:
                 # copy each gzip file and keep as individual daily files
@@ -193,7 +198,8 @@ def gfz_isdc_dealiasing_sync(
 
     # close log file and set permissions level to MODE
     if LOG:
-        LOGFILE.chmod(mode=MODE)
+        fid1.close()
+        os.chmod(fid1.name, mode=MODE)
 
 
 # PURPOSE: list a directory on the GFZ https server
@@ -282,6 +288,8 @@ def http_pull_file(
     CLOBBER=False,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # verify inputs for remote http host
     if isinstance(remote_path, str):
         remote_path = gravtk.utilities.url_split(remote_path)
@@ -307,8 +315,8 @@ def http_pull_file(
     # if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         # Printing files transferred
-        logging.info(f'{remote_file} --> ')
-        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
+        logger.info(f'{remote_file} --> ')
+        logger.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # if executing copy command (not only printing the files)
         if not LIST:
             # Create and submit request. There are a wide range of exceptions

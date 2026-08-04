@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 utilities.py
-Written by Tyler Sutterley (07/2026)
+Written by Tyler Sutterley (08/2026)
 Download and management utilities for syncing files
 
 PYTHON DEPENDENCIES:
@@ -11,6 +11,8 @@ PYTHON DEPENDENCIES:
         https://pypi.org/project/platformdirs/
 
 UPDATE HISTORY:
+    Updated 08/2026: added function to build file loggers
+        added function to write log files for valid and failed program runs
     Updated 07/2026: can use an environment variable to set cache directory
         this overrides the default platform-specific cache directory
         add function to create HTML representations of custom classes
@@ -87,6 +89,7 @@ import dateutil
 import warnings
 import importlib
 import posixpath
+import traceback
 import lxml.etree
 import subprocess
 import platformdirs
@@ -523,7 +526,7 @@ def copy(
 
 
 # PURPOSE: open a unique file adding a numerical instance if existing
-def create_unique_file(filename: str | pathlib.Path):
+def create_unique_file(filename: str | pathlib.Path, mode: str = 'xb'):
     """
     Open a unique file adding a numerical instance if existing
 
@@ -531,6 +534,13 @@ def create_unique_file(filename: str | pathlib.Path):
     ----------
     filename: str or pathlib.Path
         full path to output file
+    mode: str, default 'xb'
+        file mode to open the file
+
+    Returns
+    -------
+    fd: file object
+        opened file descriptor
     """
     # validate input filename
     filename = pathlib.Path(filename).expanduser().absolute()
@@ -540,7 +550,7 @@ def create_unique_file(filename: str | pathlib.Path):
     while counter:
         try:
             # open file descriptor only if the file doesn't exist
-            fd = filename.open(mode='xb')
+            fd = filename.open(mode=mode)
         except OSError:
             pass
         else:
@@ -549,6 +559,113 @@ def create_unique_file(filename: str | pathlib.Path):
         # new filename adds a counter before the file extension
         filename = filename.with_name(f'{stem}_{counter:d}{suffix}')
         counter += 1
+
+
+# PURPOSE: build a logging instance with a specified name
+def build_logger(name: str, **kwargs):
+    """
+    Builds a logging instance with the specified name
+
+    Parameters
+    ----------
+    name: str
+        Name of the logger
+    format: str, default '%(levelname)s:%(name)s:%(message)s'
+        Event description message format
+    level: int, default logging.CRITICAL
+        Lowest-severity log message logger will handle
+    propagate: bool, default False
+        Events logged will be passed to higher level handlers
+    stream: obj or NoneType, default None
+        Specified stream to initialize ``StreamHandler``
+    """
+    # set default arguments
+    kwargs.setdefault('format', '%(levelname)s:%(name)s:%(message)s')
+    kwargs.setdefault('level', logging.CRITICAL)
+    kwargs.setdefault('propagate', False)
+    kwargs.setdefault('stream', None)
+    # build logger
+    logger = logging.getLogger(name)
+    logger.setLevel(kwargs['level'])
+    logger.propagate = kwargs['propagate']
+    # create and add handlers to logger
+    if not logger.handlers:
+        # create handler for logger
+        handler = logging.StreamHandler(stream=kwargs['stream'])
+        formatter = logging.Formatter(kwargs['format'])
+        handler.setFormatter(formatter)
+        # add handler to logger
+        logger.addHandler(handler)
+    return logger
+
+
+# PURPOSE: output a log file for a program run
+def create_log_file(status: str = 'validrun', **kwargs) -> str:
+    """
+    Create a log file detailing the status and parameters for a program run
+
+    Parameters
+    ----------
+    status: str, default 'validrun'
+        run status
+
+            - ``'validrun'``: successful completion of run
+            - ``'failedrun'``: unsuccessful run of program
+    filename: str, default ''
+        name of the log file
+    arguments: dict, default {}
+        dictionary of argument names and values
+    output: list, default []
+        list of output files
+
+    Returns
+    -------
+    output_logfile: str
+        path to the output log file
+    """
+    # get default arguments
+    program_filename = kwargs.pop('filename', '')
+    program_arguments = kwargs.pop('arguments', {})
+    output_files = kwargs.pop('output', [])
+    # validate output files as list
+    if isinstance(output_files, (str, pathlib.Path)):
+        output_files = [output_files]
+    # format: validrun_2002-04-01T00:00:00_PID-00000.log
+    today = calendar.datetime.datetime.now().isoformat(timespec='seconds')
+    default_logfile = f'{status}_{today}_PID-{os.getpid():d}.log'
+    # create a unique log and open the log file
+    fid = create_unique_file(get_cache_path(default_logfile), mode='x')
+    output_logfile = str(fid.name)
+    logger = build_logger(
+        status,
+        level=logging.INFO,
+        stream=fid,
+        format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
+    )
+    # log the the program name
+    logger.info(f'Filename: {program_filename}')
+    # log argument values sorted alphabetically
+    logger.info('Arguments:')
+    for arg, val in sorted(program_arguments.items()):
+        logger.info(f'{arg}: {val}')
+    # any output files
+    if status.lower() == 'validrun' and any(output_files):
+        # log output files
+        logger.info('Output Files:')
+        for f in output_files:
+            logger.info(f)
+    # any other entries for the log
+    for key, val in kwargs.items():
+        logger.info(f'{key}: {val}')
+    # trackback report
+    if status.lower() == 'failedrun':
+        # log traceback error
+        logger.info('Traceback Report:')
+        traceback.print_exc(file=fid)
+    # close the log file
+    fid.close()
+    # return the path to the log file
+    return output_logfile
 
 
 # PURPOSE: check ftp connection
@@ -709,7 +826,7 @@ def from_ftp(
     """
     # create logger
     loglevel = logging.INFO if verbose else logging.CRITICAL
-    logging.basicConfig(stream=fid, level=loglevel)
+    logger = build_logger(__name__, level=loglevel, stream=fid)
     # verify inputs for remote ftp host
     if isinstance(HOST, str):
         HOST = url_split(HOST)
@@ -860,8 +977,13 @@ def http_list(
         # Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
         response = urllib2.urlopen(request, timeout=timeout, context=context)
-    except (urllib2.HTTPError, urllib2.URLError):
-        raise Exception('List error from {0}'.format(posixpath.join(*HOST)))
+    except urllib2.HTTPError as exc:
+        logging.debug(exc.code)
+        raise
+    except urllib2.URLError as exc:
+        logging.debug(exc.reason)
+        exc.message = 'Check internet connection'
+        raise
     else:
         # read and parse request for files (column names and modified times)
         tree = lxml.etree.parse(response, parser)
@@ -930,7 +1052,7 @@ def from_http(
     """
     # create logger
     loglevel = logging.INFO if verbose else logging.CRITICAL
-    logging.basicConfig(stream=fid, level=loglevel)
+    logger = build_logger(__name__, level=loglevel, stream=fid)
     # verify inputs for remote http host
     if isinstance(HOST, str):
         HOST = url_split(HOST)
@@ -939,8 +1061,13 @@ def from_http(
         # Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
         response = urllib2.urlopen(request, timeout=timeout, context=context)
-    except:
-        raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
+    except urllib2.HTTPError as exc:
+        logging.debug(exc.code)
+        raise
+    except urllib2.URLError as exc:
+        logging.debug(exc.reason)
+        exc.message = 'Check internet connection'
+        raise
     else:
         # copy remote file contents to bytesIO object
         remote_buffer = io.BytesIO()
@@ -999,11 +1126,11 @@ def from_json(
         response = urllib2.urlopen(request, timeout=timeout, context=context)
     except urllib2.HTTPError as exc:
         logging.debug(exc.code)
-        raise RuntimeError(exc.reason) from exc
+        raise
     except urllib2.URLError as exc:
         logging.debug(exc.reason)
-        msg = 'Load error from {0}'.format(posixpath.join(*HOST))
-        raise Exception(msg) from exc
+        exc.message = f'Load error from {posixpath.join(*HOST)}'
+        raise
     else:
         # load JSON response
         return json.loads(response.read())
@@ -1571,8 +1698,13 @@ def drive_list(
         tree = lxml.etree.parse(
             urllib2.urlopen(request, timeout=timeout), parser
         )
-    except (urllib2.HTTPError, urllib2.URLError) as exc:
-        raise Exception('List error from {0}'.format(posixpath.join(*HOST)))
+    except urllib2.HTTPError as exc:
+        logging.debug(exc.code)
+        raise
+    except urllib2.URLError as exc:
+        logging.debug(exc.reason)
+        exc.message = 'Check internet connection'
+        raise
     else:
         # read and parse request for files (column names and modified times)
         colnames = tree.xpath('//tr/td//a[@class="text-left"]/text()')
@@ -1648,7 +1780,7 @@ def from_drive(
     """
     # create logger
     loglevel = logging.INFO if verbose else logging.CRITICAL
-    logging.basicConfig(stream=fid, level=loglevel)
+    logger = build_logger(__name__, level=loglevel, stream=fid)
     # use netrc credentials
     if build and not (username or password):
         username, _, password = netrc.netrc().authenticators(urs)
@@ -1666,8 +1798,13 @@ def from_drive(
         # Create and submit request.
         request = urllib2.Request(posixpath.join(*HOST))
         response = urllib2.urlopen(request, timeout=timeout)
-    except (urllib2.HTTPError, urllib2.URLError) as exc:
-        raise Exception('Download error from {0}'.format(posixpath.join(*HOST)))
+    except urllib2.HTTPError as exc:
+        logging.debug(exc.code)
+        raise
+    except urllib2.URLError as exc:
+        logging.debug(exc.reason)
+        exc.message = 'Check internet connection'
+        raise
     else:
         # copy remote file contents to bytesIO object
         remote_buffer = io.BytesIO()
@@ -1805,7 +1942,7 @@ def cmr_product_shortname(
     try:
         cmr_shortnames = cmr_shortname[mission][level][center][release]
     except Exception as exc:
-        raise Exception('NASA CMR shortname not found')
+        raise ValueError('NASA CMR shortname not found')
     else:
         return cmr_shortnames
 
@@ -2020,7 +2157,7 @@ def cmr(
     """
     # create logger
     loglevel = logging.INFO if verbose else logging.CRITICAL
-    logging.basicConfig(stream=fid, level=loglevel)
+    logger = build_logger(__name__, level=loglevel, stream=fid)
     # build urllib2 opener with SSL context
     # https://docs.python.org/3/howto/urllib2.html#id5
     handler = []
@@ -2151,7 +2288,7 @@ def cmr_metadata(
     """
     # create logger
     loglevel = logging.INFO if verbose else logging.CRITICAL
-    logging.basicConfig(stream=fid, level=loglevel)
+    logger = build_logger(__name__, level=loglevel, stream=fid)
     # build urllib2 opener with SSL context
     # https://docs.python.org/3/howto/urllib2.html#id5
     handler = []
@@ -2379,7 +2516,7 @@ def from_figshare(
         # verify MD5 checksums
         computed_md5 = get_hash(local_file)
         if computed_md5 != f['supplied_md5']:
-            raise Exception(f'Checksum mismatch: {f["download_url"]}')
+            raise ValueError(f'Checksum mismatch: {f["download_url"]}')
 
 
 # PURPOSE: send files to figshare using secure FTP uploader
@@ -2741,8 +2878,13 @@ def gsfc_list(
         tree = lxml.etree.parse(
             urllib2.urlopen(request, timeout=timeout), parser
         )
-    except (urllib2.HTTPError, urllib2.URLError) as exc:
-        raise Exception('List error from {0}'.format(posixpath.join(*HOST)))
+    except urllib2.HTTPError as exc:
+        logging.debug(exc.code)
+        raise
+    except urllib2.URLError as exc:
+        logging.debug(exc.reason)
+        exc.message = 'Check internet connection'
+        raise
     else:
         # read and parse request for relative links to files
         rellinks = tree.xpath('//tr/td//a/@href')
@@ -2866,8 +3008,13 @@ def icgem_list(
         tree = lxml.etree.parse(
             urllib2.urlopen(request, timeout=timeout), parser
         )
-    except:
-        raise Exception(f'List error from {host}')
+    except urllib2.HTTPError as exc:
+        logging.debug(exc.code)
+        raise
+    except urllib2.URLError as exc:
+        logging.debug(exc.reason)
+        exc.message = 'Check internet connection'
+        raise
     else:
         # read and parse request for files
         colfiles = tree.xpath('//td[@class="tom-cell-modelfile"]//a/@href')

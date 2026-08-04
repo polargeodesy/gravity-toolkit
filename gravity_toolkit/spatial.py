@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 spatial.py
-Written by Tyler Sutterley (10/2024)
+Written by Tyler Sutterley (08/2026)
 
 Data class for reading, writing and processing spatial data
 
@@ -20,6 +20,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 08/2026: add file logger for reading and writing files
     Updated 07/2026: add dunder (magic) methods for mathematical operations
         add option to change the output format for ascii files
         add HTML representation of spatial class
@@ -139,6 +140,8 @@ class spatial(object):
         self.fill_value = kwargs['fill_value']
         self.attributes = dict()
         self.filename = None
+        # create logger for class
+        self.logger = logging.getLogger(__name__)
         # iterator
         self.__index__ = 0
 
@@ -240,7 +243,7 @@ class spatial(object):
         kwargs.setdefault('columns', ['lon', 'lat', 'data', 'time'])
         kwargs.setdefault('header', 0)
         # open the ascii file and extract contents
-        logging.info(str(self.filename))
+        self.logger.info(str(self.filename))
         if kwargs['compression'] == 'gzip':
             # read input ascii data from gzip compressed file and split lines
             with gzip.open(self.filename, mode='r') as f:
@@ -386,8 +389,8 @@ class spatial(object):
             # read netCDF4 dataset
             fileID = netCDF4.Dataset(self.filename, 'r')
         # Output NetCDF file information
-        logging.info(fileID.filepath())
-        logging.info(list(fileID.variables.keys()))
+        self.logger.info(fileID.filepath())
+        self.logger.info(list(fileID.variables.keys()))
         # set automasking
         fileID.set_auto_mask(False)
         # list of variable attributes
@@ -526,8 +529,8 @@ class spatial(object):
             # read HDF5 dataset
             fileID = h5py.File(self.filename, 'r')
         # Output HDF5 file information
-        logging.info(fileID.filename)
-        logging.info(list(fileID.keys()))
+        self.logger.info(fileID.filename)
+        self.logger.info(list(fileID.keys()))
         # list of variable attributes
         attributes_list = [
             'description',
@@ -684,8 +687,8 @@ class spatial(object):
             if hasattr(object_list[i], 'error'):
                 self.error[:, :, t] = object_list[i].error[:, :].copy()
             if kwargs['date']:
-                self.time[t] = np.atleast_1d(object_list[i].time)
-                self.month[t] = np.atleast_1d(object_list[i].month)
+                self.time[t] = object_list[i].time
+                self.month[t] = object_list[i].month
             # append filename to list
             if getattr(object_list[i], 'filename'):
                 self.filename.append(object_list[i].filename)
@@ -789,7 +792,7 @@ class spatial(object):
         # set default verbosity and parameters
         kwargs.setdefault('date', True)
         kwargs.setdefault('verbose', False)
-        logging.info(str(self.filename))
+        self.logger.info(str(self.filename))
         # open the output file
         fid = self.filename.open(mode='w', encoding='utf8')
         file_format = '{0:10.4f} {1:10.4f} '
@@ -989,8 +992,8 @@ class spatial(object):
         # date created
         fileID.date_created = time.strftime('%Y-%m-%d', time.localtime())
         # Output NetCDF structure information
-        logging.info(str(self.filename))
-        logging.info(list(fileID.variables.keys()))
+        self.logger.info(str(self.filename))
+        self.logger.info(list(fileID.variables.keys()))
         # Closing the NetCDF file
         fileID.close()
 
@@ -1155,8 +1158,8 @@ class spatial(object):
             '%Y-%m-%d', time.localtime()
         )
         # Output HDF5 structure information
-        logging.info(str(self.filename))
-        logging.info(list(fileID.keys()))
+        self.logger.info(str(self.filename))
+        self.logger.info(list(fileID.keys()))
         # Closing the NetCDF file
         fileID.close()
 
@@ -2035,7 +2038,7 @@ class scaling_factors(spatial):
         kwargs.setdefault('columns', default_columns)
         kwargs.setdefault('header', 0)
         # open the ascii file and extract contents
-        logging.info(str(self.filename))
+        self.logger.info(str(self.filename))
         if kwargs['compression'] == 'gzip':
             # read input ascii data from gzip compressed file and split lines
             with gzip.open(self.filename, mode='r') as f:
@@ -2126,7 +2129,7 @@ class scaling_factors(spatial):
         self.filename = pathlib.Path(filename).expanduser().absolute()
         # set default verbosity and parameters
         kwargs.setdefault('verbose', False)
-        logging.info(str(self.filename))
+        self.logger.info(str(self.filename))
         # open the output file
         fid = self.filename.open(mode='w', encoding='utf8')
         # write to file for each valid latitude and longitude

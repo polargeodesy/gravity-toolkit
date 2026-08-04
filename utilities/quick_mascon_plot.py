@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 quick_mascon_plot.py
-Written by Tyler Sutterley (06/2024)
+Written by Tyler Sutterley (08/2026)
 Plots a mascon time series file for a particular format
 
 COMMAND LINE OPTIONS:
@@ -35,6 +35,7 @@ PROGRAM DEPENDENCIES:
     time_series.regress.py: calculates trend coefficients using least-squares
 
 UPDATE HISTORY:
+    Updated 08/2026: fixes for typing error with numpy updates
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 08/2023: add option for changing drawing order of time series
     Updated 05/2023: use pathlib to define and operate on paths
@@ -139,11 +140,11 @@ def run_plot(
         for t, m in enumerate(months):
             valid = np.count_nonzero(dinput[:, 0] == m)
             if valid:
-                (mm,) = np.nonzero(dinput[:, 0] == m)
-                tdec[t] = dinput[mm, 1]
-                data[t] = dinput[mm, 2] - dinput[0, 2]
+                mm = np.flatnonzero(dinput[:, 0] == m)
+                (tdec[t],) = dinput[mm, 1]
+                (data[t],) = dinput[mm, 2] - dinput[0, 2]
                 if error:
-                    err[t] = dinput[mm, 3]
+                    (err[t],) = dinput[mm, 3]
     else:
         tdec = np.copy(dinput[:, 1])
         data = np.copy(dinput[:, 2]) - dinput[0, 2]
