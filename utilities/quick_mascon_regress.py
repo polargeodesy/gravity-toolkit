@@ -22,6 +22,7 @@ PROGRAM DEPENDENCIES:
     time_series.amplitude.py: calculates the amplitude and phase of a harmonic
 
 UPDATE HISTORY:
+    Updated 08/2026: fixes for typing error with numpy updates
     Updated 07/2026: use np.hypot to calculate the sum of two squares
     Updated 06/2023: can choose different tidal aliasing periods
     Updated 05/2023: split S2 tidal aliasing terms into GRACE and GRACE-FO eras
@@ -77,7 +78,7 @@ def run_regress(
     # fitting with either piecewise or polynomial regression
     if breakpoint is not None:
         # Setting output parameters for piecewise fit
-        (breakpoint_index,) = np.nonzero(dinput[:, 0] == breakpoint)
+        breakpoint_index = np.flatnonzero(dinput[:, 0] == breakpoint)
         cycle_index = 3
         coef_str = ['x0', 'px1', 'px1']
         unit_suffix = ['', ' yr^-1', ' yr^-1']

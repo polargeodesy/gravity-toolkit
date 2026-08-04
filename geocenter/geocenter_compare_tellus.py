@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 geocenter_compare_tellus.py
-Written by Tyler Sutterley (01/2025)
+Written by Tyler Sutterley (08/2026)
 Plots the GRACE/GRACE-FO geocenter time series for different
     GRACE/GRACE-FO processing centers comparing with the
     JPL GRACE Tellus product
@@ -17,6 +17,7 @@ COMMAND LINE OPTIONS:
     -M X, --missing X: Missing GRACE months in time series
 
 UPDATE HISTORY:
+    Updated 08/2026: fixes for typing error with numpy updates
     Updated 01/2025: fixed deprecated tick label resizing
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: place matplotlib import within try/except statement
@@ -105,7 +106,7 @@ def geocenter_compare_tellus(grace_dir, DREL, START_MON, END_MON, MISSING):
             for i, m in enumerate(months):
                 valid = np.count_nonzero(DEG1.month == m)
                 if valid:
-                    (mm,) = np.nonzero(DEG1.month == m)
+                    mm = np.flatnonzero(DEG1.month == m)
                     tdec[i] = DEG1.time[mm]
                     data[i] = val[mm]
             # plot all dates
@@ -137,7 +138,7 @@ def geocenter_compare_tellus(grace_dir, DREL, START_MON, END_MON, MISSING):
                 for i, m in enumerate(months):
                     valid = np.count_nonzero(DEG1.month == m)
                     if valid:
-                        (mm,) = np.nonzero(DEG1.month == m)
+                        mm = np.flatnonzero(DEG1.month == m)
                         tdec[i] = DEG1.time[mm]
                         data[i] = val[mm]
                 # plot all dates
@@ -168,7 +169,7 @@ def geocenter_compare_tellus(grace_dir, DREL, START_MON, END_MON, MISSING):
             for i, m in enumerate(months):
                 valid = np.count_nonzero(DEG1.month == m)
                 if valid:
-                    (mm,) = np.nonzero(DEG1.month == m)
+                    mm = np.flatnonzero(DEG1.month == m)
                     tdec[i] = DEG1.time[mm]
                     data[i] = val[mm]
             # plot all dates

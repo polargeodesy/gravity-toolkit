@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 cnes_grace_sync.py
-Written by Tyler Sutterley (12/2022)
+Written by Tyler Sutterley (08/2026)
 
 CNES/GRGS GRACE data download program for gravity field products
     https://grace.obs-mip.fr/
@@ -35,6 +35,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 08/2026: change formatting and output of file logs
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
     Updated 04/2022: use argparse descriptions within documentation
@@ -180,20 +181,28 @@ def cnes_grace_sync(
         # output to log file
         # format: CNES_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d', time.localtime())
-        LOGFILE = DIRECTORY.joinpath(f'CNES_sync_{today}.log')
-        fid1 = LOGFILE.open(mode='w', encoding='utf8')
-        logging.basicConfig(stream=fid1, level=logging.INFO)
-        logging.info(f'CNES Sync Log ({today})')
+        LOGFILE = gravtk.utilities.get_cache_path(f'CNES_sync_{today}.log')
+        # create a unique log and open the log file
+        fid1 = gravtk.utilities.create_unique_file(LOGFILE, mode='x')
+        # build logger for outputting to log file
+        logger = gravtk.utilities.build_logger(
+            __name__,
+            level=logging.INFO,
+            stream=fid1,
+            format='%(message)s (%(levelname)s)',
+        )
+        logger.info(f'CNES Sync Log ({today})')
+        logger.info(f'Filename: {pathlib.Path(sys.argv[0]).name}')
     else:
-        # standard output (terminal output)
-        logging.basicConfig(level=logging.INFO)
+        # build logger for standard output (terminal output)
+        logger = gravtk.utilities.build_logger(__name__, level=logging.INFO)
 
     # DATA RELEASES (RL01, RL02, RL03, RL04)
     # RL01 and RL02 are no longer updated as default
     for rl in DREL:
         # datasets (GSM, GAA, GAB)
         for ds in DSET[rl]:
-            logging.info(f'CNES/{rl}/{ds}')
+            logger.info(f'CNES/{rl}/{ds}')
             # local directory for exact data product
             local_dir = DIRECTORY.joinpath('CNES', rl, ds)
             # check if directory exists and recursively create if not
@@ -262,12 +271,14 @@ def cnes_grace_sync(
     # close log file and set permissions level to MODE
     if LOG:
         fid1.close()
-        LOGFILE.chmod(mode=MODE)
+        os.chmod(fid1.name, mode=MODE)
 
 
 # PURPOSE: copy file from tar file checking if file exists locally
 # and if the original file is newer than the local file
 def gzip_copy_file(tar, member, local_file, CLOBBER, MODE):
+    # get logger
+    logger = logging.getLogger(__name__)
     # if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
@@ -292,8 +303,8 @@ def gzip_copy_file(tar, member, local_file, CLOBBER, MODE):
     # if file does not exist, is to be overwritten, or CLOBBERed
     if TEST or CLOBBER:
         # Printing files copied from tar file to new compressed file
-        logging.info(f'{tar.name}/{member.name} --> ')
-        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
+        logger.info(f'{tar.name}/{member.name} --> ')
+        logger.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # extract file contents to new compressed file
         f_in = tar.extractfile(member)
         with gzip.GzipFile(local_file, 'wb', 9, None, file1_mtime) as f_out:

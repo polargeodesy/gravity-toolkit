@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 gfz_icgem_costg_ftp.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2026)
 Syncs GRACE/GRACE-FO/Swarm COST-G data from the GFZ International
     Centre for Global Earth Models (ICGEM)
 
@@ -38,6 +38,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 08/2026: change formatting and output of file logs
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -107,24 +108,35 @@ def gfz_icgem_costg_ftp(
         # output to log file
         # format: GFZ_ICGEM_COST-G_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d', time.localtime())
-        LOGFILE = DIRECTORY.joinpath(f'GFZ_ICGEM_COST-G_sync_{today}.log')
-        logging.basicConfig(filename=LOGFILE, level=logging.INFO)
-        logging.info(f'GFZ ICGEM COST-G Sync Log ({today})')
+        LOGFILE = gravtk.utilities.get_cache_path(
+            f'GFZ_ICGEM_COST-G_sync_{today}.log'
+        )
+        # create a unique log and open the log file
+        fid1 = gravtk.utilities.create_unique_file(LOGFILE, mode='x')
+        # build logger for outputting to log file
+        logger = gravtk.utilities.build_logger(
+            __name__,
+            level=logging.INFO,
+            stream=fid1,
+            format='%(message)s (%(levelname)s)',
+        )
+        logger.info(f'GFZ ICGEM COST-G Sync Log ({today})')
+        logger.info(f'Filename: {pathlib.Path(sys.argv[0]).name}')
     else:
-        # standard output (terminal output)
-        logging.basicConfig(level=logging.INFO)
+        # build logger for standard output (terminal output)
+        logger = gravtk.utilities.build_logger(__name__, level=logging.INFO)
 
     # connect and login to GFZ ICGEM ftp server
     ftp = ftplib.FTP('icgem.gfz-potsdam.de', timeout=TIMEOUT)
     ftp.login()
 
     # find files for a particular mission
-    logging.info(f'{MISSION} Spherical Harmonics:')
+    logger.info(f'{MISSION} Spherical Harmonics:')
 
     # Sync gravity field dealiasing products
     for ds in DSET[MISSION]:
         # print string of exact data product
-        logging.info(f'{MISSION}/{RELEASE}/{ds}')
+        logger.info(f'{MISSION}/{RELEASE}/{ds}')
         # local directory for exact data product
         local_dir = DIRECTORY.joinpath(LOCAL[MISSION], RELEASE, ds)
         # check if directory exists and recursively create if not
@@ -181,7 +193,8 @@ def gfz_icgem_costg_ftp(
     ftp.quit()
     # close log file and set permissions level to MODE
     if LOG:
-        LOGFILE.chmod(mode=MODE)
+        fid1.close()
+        os.chmod(fid1.name, mode=MODE)
 
 
 # PURPOSE: pull file from a remote host checking if file exists locally
@@ -197,6 +210,8 @@ def ftp_mirror_file(
     CHECKSUM=False,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
@@ -230,8 +245,8 @@ def ftp_mirror_file(
     if TEST or CLOBBER:
         # Printing files transferred
         remote_ftp_url = posixpath.join('ftp://', *remote_path)
-        logging.info(f'{remote_ftp_url} -->')
-        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
+        logger.info(f'{remote_ftp_url} -->')
+        logger.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # if executing copy command (not only printing the files)
         if not LIST:
             # copy file from ftp server or from bytesIO object

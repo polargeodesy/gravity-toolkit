@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 run_grace_date.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2026)
 
 Wrapper program for running GRACE date and months programs
 
@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
     grace_months_index.py: creates a single file showing the GRACE dates
 
 UPDATE HISTORY:
+    Updated 08/2026: use upstream file logger for verbose output
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 04/2022: use argparse descriptions within documentation
@@ -81,7 +82,7 @@ import gravity_toolkit as gravtk
 def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[VERBOSE])
+    logger = gravtk.utilities.build_logger(__name__, level=loglevels[VERBOSE])
 
     # allocate python dictionaries for each processing center
     DSET = {}
@@ -116,14 +117,14 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
         for r in drel:
             # for number of data products
             for d in DSET[p][r]:
-                logging.info(f'GRACE Date Program: {p} {r} {d}')
+                logger.info(f'GRACE Date Program: {p} {r} {d}')
                 # create GRACE/GRACE-FO date index file
                 gravtk.grace_date(
                     base_dir, PROC=p, DREL=r, DSET=d, OUTPUT=True, MODE=MODE
                 )
 
     # run GRACE/GRACE-FO months program for data releases
-    logging.info('GRACE Months Program')
+    logger.info('GRACE Months Program')
     gravtk.grace_months_index(base_dir, DREL=DREL, MODE=MODE)
 
 

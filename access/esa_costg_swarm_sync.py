@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 esa_costg_swarm_sync.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2026)
 Syncs Swarm gravity field products from the ESA Swarm Science Server
     https://earth.esa.int/eogateway/missions/swarm/data
     https://www.esa.int/Applications/Observing_the_Earth/Swarm
@@ -29,6 +29,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 08/2026: change formatting and output of file logs
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 12/2022: single implicit import of gravity toolkit
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -76,12 +77,21 @@ def esa_costg_swarm_sync(
         # output to log file
         # format: ESA_Swarm_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d', time.localtime())
-        LOGFILE = DIRECTORY.joinpath(f'ESA_Swarm_sync_{today}.log')
-        logging.basicConfig(filename=LOGFILE, level=logging.INFO)
-        logging.info(f'ESA Swarm Sync Log ({today})')
+        LOGFILE = gravtk.utilities.get_cache_path(f'ESA_Swarm_sync_{today}.log')
+        # create a unique log and open the log file
+        fid1 = gravtk.utilities.create_unique_file(LOGFILE, mode='x')
+        # build logger for outputting to log file
+        logger = gravtk.utilities.build_logger(
+            __name__,
+            level=logging.INFO,
+            stream=fid1,
+            format='%(message)s (%(levelname)s)',
+        )
+        logger.info(f'ESA Swarm Sync Log ({today})')
+        logger.info(f'Filename: {pathlib.Path(sys.argv[0]).name}')
     else:
-        # standard output (terminal output)
-        logging.basicConfig(level=logging.INFO)
+        # build logger for standard output (terminal output)
+        logger = gravtk.utilities.build_logger(__name__, level=logging.INFO)
 
     # Swarm Science Server url
     # using the JSON api protocols to retrieve files
@@ -167,7 +177,8 @@ def esa_costg_swarm_sync(
 
     # close log file and set permissions level to MODE
     if LOG:
-        LOGFILE.chmod(mode=MODE)
+        fid1.close()
+        os.chmod(fid1.name, mode=MODE)
 
 
 # PURPOSE: pull file from a remote host checking if file exists locally
@@ -182,6 +193,8 @@ def http_pull_file(
     CHECKSUM=False,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
@@ -220,8 +233,8 @@ def http_pull_file(
     # if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         # Printing files transferred
-        logging.info(f'{remote_file} --> ')
-        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
+        logger.info(f'{remote_file} --> ')
+        logger.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # if executing copy command (not only printing the files)
         if not LIST:
             # chunked transfer encoding size

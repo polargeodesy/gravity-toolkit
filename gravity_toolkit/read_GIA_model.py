@@ -235,6 +235,8 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
     gia_Ylms['reference'] = None
     gia_Ylms['url'] = None
     gia_Ylms['title'] = None
+    # get logger
+    logger = logging.getLogger(__name__)
 
     # GIA model citations and references
     if GIA == 'IJ05-R2':
@@ -416,7 +418,7 @@ def read_GIA_model(input_file, GIA=None, MMAX=None, DATAFORM=None, **kwargs):
         if not input_file.exists():
             raise FileNotFoundError(f'{str(input_file)} not found')
         # log GIA file if debugging
-        logging.debug(f'Reading GIA file: {str(input_file)}')
+        logger.debug(f'Reading GIA file: {str(input_file)}')
 
     # Reading GIA files (ICE-6G and Wu have more complex formats)
     if GIA in ('IJ05-R2', 'W12a', 'SM09', 'AW13-ICE6G', 'AW13-IJ05'):
@@ -771,8 +773,8 @@ class gia(harmonics):
             MMAX=kwargs['mmax'],
         )
         # Output file information
-        logging.info(self.filename)
-        logging.info(list(Ylms.keys()))
+        self.logger.info(self.filename)
+        self.logger.info(list(Ylms.keys()))
         # copy variables for GIA model
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()

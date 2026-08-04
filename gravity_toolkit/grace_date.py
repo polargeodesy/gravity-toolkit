@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 grace_date.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2026)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads index file from podaac_cumulus.py or gfz_isdc_grace_ftp.py
@@ -46,6 +46,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 08/2026: added verbosity argument to print debugging information
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: use f-strings for formatting output date lines
         added regex formatting for CNES GRGS harmonics
@@ -156,8 +157,9 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     output_files: dict
         dictionary of GRACE/GRACE-FO files indexed by month
     """
-
-    #  Directory of exact product
+    # get logger
+    logger = logging.getLogger(__name__)
+    # directory of exact product
     base_dir = pathlib.Path(base_dir).expanduser().absolute()
     grace_dir = base_dir.joinpath(PROC, DREL, DSET)
     # index file containing GRACE/GRACE-FO data filenames
@@ -166,7 +168,7 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     if not index_file.exists():
         raise FileNotFoundError(f'{str(index_file)} not found')
     # log index file if debugging
-    logging.debug(f'Reading index file: {str(index_file)}')
+    logger.debug(f'Reading index file: {str(index_file)}')
     # read index file for GRACE/GRACE-FO filenames
     with index_file.open(mode='r', encoding='utf8') as f:
         input_files = f.read().splitlines()
@@ -365,6 +367,14 @@ def arguments():
         action='store_true',
         help='Overwrite existing data',
     )
+    # print information about run
+    parser.add_argument(
+        '--verbose',
+        '-V',
+        action='count',
+        default=0,
+        help='Verbose output of run',
+    )
     # permissions mode of the local directories and files (number in octal)
     parser.add_argument(
         '--mode',
@@ -382,6 +392,12 @@ def main():
     # Read the system arguments listed after the program
     parser = arguments()
     args, _ = parser.parse_known_args()
+
+    # create logger
+    loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # run GRACE/GRACE-FO date program
     for pr in args.center:

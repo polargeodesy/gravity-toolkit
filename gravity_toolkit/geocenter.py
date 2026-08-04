@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 geocenter.py
-Written by Tyler Sutterley (07/2026)
+Written by Tyler Sutterley (08/2026)
 Data class for reading and processing geocenter data
 
 PYTHON DEPENDENCIES:
@@ -15,6 +15,7 @@ PYTHON DEPENDENCIES:
         https://github.com/yaml/pyyaml
 
 UPDATE HISTORY:
+    Updated 08/2026: add file logger for reading and writing files
     Updated 07/2026: add dunder (magic) methods for mathematical operations
         add HTML representation of geocenter class
     Updated 06/2024: use wrapper to importlib for optional dependencies
@@ -52,6 +53,7 @@ import gzip
 import time
 import uuid
 import yaml
+import logging
 import pathlib
 import numpy as np
 import gravity_toolkit.time
@@ -113,6 +115,8 @@ class geocenter(object):
         self.filename = None
         # Average Radius of the Earth [mm]
         self.radius = copy.copy(kwargs['radius'])
+        # create logger for class
+        self.logger = logging.getLogger(__name__)
         # iterator
         self.__index__ = 0
 
@@ -169,6 +173,8 @@ class geocenter(object):
         # full path to AOD geocenter for month (using glo coefficients)
         granule = f'AOD1B_{release} {product}_{year:4.0f}_{month:02.0f}.txt'
         AOD1B_file = self.directory.joinpath(granule)
+        # logging debug output for AOD1B file
+        self.logger.debug(AOD1B_file)
         # check that file exists
         if not AOD1B_file.exists():
             msg = f'AOD1B File {AOD1B_file} not in File System'
@@ -216,6 +222,7 @@ class geocenter(object):
 
         # set filename
         self.case_insensitive_filename(geocenter_file)
+        self.logger.debug(self.filename)
         # set default keyword arguments
         kwargs.setdefault('header', True)
 
@@ -348,6 +355,7 @@ class geocenter(object):
 
         # set filename
         self.case_insensitive_filename(geocenter_file)
+        self.logger.debug(self.filename)
         # set default keyword arguments
         kwargs.setdefault('AOD', False)
         kwargs.setdefault('columns', [])
@@ -464,6 +472,7 @@ class geocenter(object):
         """
         # set filename
         self.case_insensitive_filename(geocenter_file)
+        self.logger.debug(self.filename)
         # read geocenter file and get contents
         with self.filename.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
@@ -562,6 +571,7 @@ class geocenter(object):
         """
         # set filename
         self.case_insensitive_filename(geocenter_file)
+        self.logger.debug(self.filename)
         # set default keyword arguments
         kwargs.setdefault('header', True)
 
@@ -664,6 +674,7 @@ class geocenter(object):
         """
         # set filename
         self.case_insensitive_filename(geocenter_file)
+        self.logger.debug(self.filename)
         # set default keyword arguments
         kwargs.setdefault('header', True)
         kwargs.setdefault('JPL', True)
@@ -788,6 +799,7 @@ class geocenter(object):
         kwargs.setdefault('compression', None)
         # set filename
         self.case_insensitive_filename(geocenter_file)
+        self.logger.debug(self.filename)
         # Open the netCDF4 file for reading
         if kwargs['compression'] == 'gzip':
             # read gzipped file as in-memory (diskless) netCDF4 dataset

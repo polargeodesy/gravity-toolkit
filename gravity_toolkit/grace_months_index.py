@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 grace_months_index.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2026)
 
 Creates a file with the start and end days for each dataset
 Shows the range of each month for (CSR/GFZ/JPL) (RL04/RL05/RL06)
@@ -40,6 +40,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 08/2026: fixes for typing error with numpy updates
     Updated 05/2023: use formatting for reading from date file
         use pathlib to define and operate on paths
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -156,7 +157,7 @@ def grace_months_index(base_dir, DREL=['RL06', 'rl06v2.0'], MODE=None):
             if exists != 0:
                 # if there is a matching month
                 # indice of matching month
-                (ind,) = np.nonzero(var_info[var]['mon'] == m)
+                ind = np.flatnonzero(var_info[var]['mon'] == m)
                 # start date
                 (st_yr,) = var_info[var]['styr'][ind]
                 (st_day,) = var_info[var]['stday'][ind]

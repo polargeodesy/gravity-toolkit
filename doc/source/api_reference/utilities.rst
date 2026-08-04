@@ -51,6 +51,10 @@ General Methods
 
 .. autofunction:: gravity_toolkit.utilities.create_unique_file
 
+.. autofunction:: gravity_toolkit.utilities.build_logger
+
+.. autofunction:: gravity_toolkit.utilities.create_log_file
+
 .. autofunction:: gravity_toolkit.utilities.check_ftp_connection
 
 .. autofunction:: gravity_toolkit.utilities.ftp_list

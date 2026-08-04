@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-run_sea_level_equation.py (06/2025)
+run_sea_level_equation.py (08/2026)
 Solves the sea level equation with the option of including polar motion feedback
 Uses a Clenshaw summation to calculate the spherical harmonic summation
 
@@ -76,6 +76,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 08/2026: use default file logger for valid and failed program runs
     Updated 06/2025: added options to run from input spatial fields
         added attributes for lineage to track input files
         added option to set the density of water in g/cm^3
@@ -135,12 +136,14 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(pathlib.Path(sys.argv[0]).name)
-    logging.info(args)
-    logging.info(f'module name: {__name__}')
+    # get logger
+    logger = logging.getLogger(__name__)
+    logger.info(pathlib.Path(sys.argv[0]).name)
+    logger.info(args)
+    logger.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info(f'parent process: {os.getppid():d}')
-    logging.info(f'process id: {os.getpid():d}')
+        logger.info(f'parent process: {os.getppid():d}')
+    logger.info(f'process id: {os.getpid():d}')
 
 
 # PURPOSE: Computes Sea Level Fingerprints including polar motion feedback
@@ -162,6 +165,8 @@ def run_sea_level_equation(
     UNITS=None,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # set default paths
     INPUT_FILE = pathlib.Path(INPUT_FILE).expanduser().absolute()
     OUTPUT_FILE = pathlib.Path(OUTPUT_FILE).expanduser().absolute()
@@ -274,7 +279,7 @@ def run_sea_level_equation(
     for i in range(nt):
         # print iteration if running a series
         if nt > 1:
-            logging.info(f'Index {i + 1:d} of {nt:d}')
+            logger.info(f'Index {i + 1:d} of {nt:d}')
         # subset harmonics/spatial fields to indice
         if INPUT_TYPE == 'spatial':
             spatial_data = load_spatial.index(i, date=DATE)
@@ -495,6 +500,15 @@ def arguments():
         choices=[1, 2, 3],
         help='Input units of spatial fields',
     )
+    # Output log file for each job in forms
+    # validrun_2002-04-01T00:00:00_PID-00000.log
+    # failedrun_2002-04-01T00:00:00_PID-00000.log
+    parser.add_argument(
+        '--log',
+        default=False,
+        action='store_true',
+        help='Output log file for each job',
+    )
     # print information about processing run
     parser.add_argument(
         '--verbose',
@@ -523,7 +537,9 @@ def main():
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # try to run the analysis with listed parameters
     try:
@@ -551,8 +567,23 @@ def main():
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
-        logging.critical(f'process id {os.getpid():d} failed')
-        logging.error(traceback.format_exc())
+        logger.critical(f'process id {os.getpid():d} failed')
+        logger.error(traceback.format_exc())
+        if args.log:  # write failed job completion log file
+            logfile = gravtk.utilities.create_log_file(
+                'failedrun',
+                filename=pathlib.Path(sys.argv[0]).name,
+                arguments=vars(args),
+            )
+            logger.info(logfile)
+    else:
+        if args.log:  # write successful job completion log file
+            logfile = gravtk.utilities.create_log_file(
+                'validrun',
+                filename=pathlib.Path(sys.argv[0]).name,
+                arguments=vars(args),
+            )
+            logger.info(logfile)
 
 
 # run main program

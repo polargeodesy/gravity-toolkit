@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 make_grace_index.py
-Written by Tyler Sutterley (10/2023)
+Written by Tyler Sutterley (08/2026)
 Creates index files of GRACE/GRACE-FO Level-2 data
 
 CALLING SEQUENCE:
@@ -23,6 +23,7 @@ PYTHON DEPENDENCIES:
         https://numpy.org/doc/stable/user/numpy-for-matlab-users.html
 
 UPDATE HISTORY:
+    Updated 08/2026: use upstream file logger for verbose output
     Updated 10/2023: generalize release argument to be generalized
     Updated 09/2023: add reduce by date if making index with latest version
         don't restrict version number to a set list of presently available
@@ -46,12 +47,14 @@ import gravity_toolkit as gravtk
 def make_grace_index(
     DIRECTORY, PROC=[], DREL=[], DSET=[], VERSION=[], MODE=None
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # input directory setup
     DIRECTORY = pathlib.Path(DIRECTORY).expanduser().absolute()
     # mission shortnames
     shortname = {'grace': 'GRAC', 'grace-fo': 'GRFO'}
     # GRACE/GRACE-FO level-2 spherical harmonic products
-    logging.info('GRACE/GRACE-FO L2 Global Spherical Harmonics:')
+    logger.info('GRACE/GRACE-FO L2 Global Spherical Harmonics:')
     # for each processing center (CSR, GFZ, JPL)
     for pr in PROC:
         # for each data release (RL04, RL05, RL06)
@@ -68,7 +71,7 @@ def make_grace_index(
                 # for each satellite mission (grace, grace-fo)
                 for i, mi in enumerate(['grace', 'grace-fo']):
                     # print string of exact data product
-                    logging.info(f'{mi} {pr}/{rl}/{ds}')
+                    logger.info(f'{mi} {pr}/{rl}/{ds}')
                     # regular expression operator for data product
                     rx = gravtk.utilities.compile_regex_pattern(
                         pr, rl, ds, mission=shortname[mi], version=VERSION[i]
@@ -177,7 +180,9 @@ def main():
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # run program with parameters
     make_grace_index(
