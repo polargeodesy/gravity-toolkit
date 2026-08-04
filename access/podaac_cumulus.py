@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 podaac_cumulus.py
-Written by Tyler Sutterley (11/2024)
+Written by Tyler Sutterley (08/2026)
 
 Syncs GRACE/GRACE-FO data from NASA JPL PO.DAAC Cumulus AWS S3 bucket
 
@@ -52,6 +52,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 08/2026: change formatting and output of file logs
     Updated 11/2024: documentation endpoint for TN-13 and TN-14 files
     Updated 09/2024: updated default version for GRACE-FO to latest
     Updated 04/2024: added check to verify access to s3 buckets
@@ -116,21 +117,36 @@ def podaac_cumulus(
 
     # create log file with list of synchronized files (or print to terminal)
     if LOG:
+        # output to log file
         # format: PODAAC_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d', time.localtime())
-        LOGFILE = DIRECTORY.joinpath(f'PODAAC_sync_{today}.log')
-        logging.basicConfig(filename=LOGFILE, level=logging.INFO)
-        logging.info(f'PO.DAAC Cumulus Sync Log ({today})')
-        logging.info('CENTERS={0}'.format(','.join(PROC)))
-        logging.info('RELEASES={0}'.format(','.join(DREL)))
+        LOGFILE = gravtk.utilities.get_cache_path(f'PODAAC_sync_{today}.log')
+        # create a unique log and open the log file
+        fid1 = gravtk.utilities.create_unique_file(LOGFILE, mode='x')
+        # build logger for outputting to log file
+        logger = gravtk.utilities.build_logger(
+            __name__,
+            level=logging.INFO,
+            stream=fid1,
+            format='%(message)s (%(levelname)s)',
+        )
+        logger.info(f'PO.DAAC Cumulus Sync Log ({today})')
+        logger.info(f'Filename: {pathlib.Path(sys.argv[0]).name}')
     else:
-        # standard output (terminal output)
-        logging.basicConfig(level=logging.INFO)
+        # build logger for standard output (terminal output)
+        logger = gravtk.utilities.build_logger(__name__, level=logging.INFO)
+
+    # print information about the sync arguments
+    logger.info(f'Directory: {str(DIRECTORY)}')
+    logger.info(f'CMR Endpoint: {ENDPOINT}')
+    logger.info(f'Center: {",".join(PROC)}')
+    logger.info(f'Release: {",".join(DREL)}')
+    logger.info(f'Version: {",".join(VERSION)}')
 
     # Degree 1 (geocenter) coefficients
-    logging.info('Degree 1 Coefficients:')
+    logger.info('Degree 1 Coefficients:')
     # SLR C2,0 and C3,0 coefficients
-    logging.info('C2,0 and C3,0 Coefficients:')
+    logger.info('C2,0 and C3,0 Coefficients:')
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-13_GEOC_(CSR|GFZ|JPL)_(.*?).txt', re.VERBOSE)
     R2 = re.compile(r'TN-(14)_C30_C20_GSFC_SLR.txt', re.VERBOSE)
@@ -159,7 +175,7 @@ def podaac_cumulus(
                 try:
                     (url,) = [url for url in urls if R1.search(url)]
                 except ValueError as exc:
-                    logging.info('No TN-13 Files Available')
+                    logger.info('No TN-13 Files Available')
                     url = None
                 else:
                     granule = gravtk.utilities.url_split(url)[-1]
@@ -186,7 +202,7 @@ def podaac_cumulus(
                 try:
                     (url,) = [url for url in urls if R2.search(url)]
                 except ValueError as exc:
-                    logging.info('No TN-14 Files Available')
+                    logger.info('No TN-14 Files Available')
                     url = None
                 else:
                     granule = gravtk.utilities.url_split(url)[-1]
@@ -211,11 +227,11 @@ def podaac_cumulus(
 
     # GRACE/GRACE-FO AOD1B dealiasing products
     if AOD1B:
-        logging.info('GRACE L1B Dealiasing Products:')
+        logger.info('GRACE L1B Dealiasing Products:')
         # for each data release (RL04, RL05, RL06)
         for rl in DREL:
             # print string of exact data product
-            logging.info(f'GFZ/AOD1B/{rl}')
+            logger.info(f'GFZ/AOD1B/{rl}')
             # local directory for exact data product
             local_dir = DIRECTORY.joinpath('AOD1B', rl)
             # check if directory exists and recursively create if not
@@ -269,7 +285,7 @@ def podaac_cumulus(
                     )
 
     # GRACE/GRACE-FO level-2 spherical harmonic products
-    logging.info('GRACE/GRACE-FO L2 Global Spherical Harmonics:')
+    logger.info('GRACE/GRACE-FO L2 Global Spherical Harmonics:')
     # for each processing center (CSR, GFZ, JPL)
     for pr in PROC:
         # for each data release (RL04, RL05, RL06)
@@ -285,7 +301,7 @@ def podaac_cumulus(
                 # for each satellite mission (grace, grace-fo)
                 for i, mi in enumerate(['grace', 'grace-fo']):
                     # print string of exact data product
-                    logging.info(f'{mi} {pr}/{rl}/{ds}')
+                    logger.info(f'{mi} {pr}/{rl}/{ds}')
                     # test connection to s3 bucket
                     if ENDPOINT == 's3':
                         # get shortname for CMR query
@@ -368,7 +384,8 @@ def podaac_cumulus(
 
     # close log file and set permissions level to MODE
     if LOG:
-        LOGFILE.chmod(mode=MODE)
+        fid1.close()
+        os.chmod(fid1.name, mode=MODE)
 
 
 # PURPOSE: pull file from a remote host checking if file exists locally
@@ -382,6 +399,8 @@ def http_pull_file(
     CLOBBER=False,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
@@ -402,8 +421,7 @@ def http_pull_file(
     # if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         # Printing files transferred
-        logging.info(f'{remote_file} -->')
-        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
+        logger.info(f'{remote_file} -->\n\t{str(local_file)}{OVERWRITE}')
         # chunked transfer encoding size
         CHUNK = 16 * 1024
         # Create and submit request.
@@ -428,6 +446,8 @@ def http_pull_file(
 def s3_pull_file(
     response, remote_mtime, local_file, GZIP=False, CLOBBER=False, MODE=0o775
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # if file exists in file system: check if remote file is newer
     TEST = False
     OVERWRITE = ' (clobber)'
@@ -448,7 +468,7 @@ def s3_pull_file(
     # if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         # Printing files transferred
-        logging.info(f'{str(local_file)}{OVERWRITE}')
+        logger.info(f'{str(local_file)}{OVERWRITE}')
         # chunked transfer encoding size
         CHUNK = 16 * 1024
         # copy remote file contents to local file

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 harmonics.py
-Written by Tyler Sutterley (07/2026)
+Written by Tyler Sutterley (08/2026)
 Contributions by Hugo Lecomte
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
@@ -25,6 +25,7 @@ PROGRAM DEPENDENCIES:
     destripe_harmonics.py: filters spherical harmonics for correlated errors
 
 UPDATE HISTORY:
+    Updated 08/2026: add file logger for reading and writing files
     Updated 07/2026: add dunder (magic) methods for mathematical operations
         add HTML representation of harmonics class
     Updated 06/2024: use wrapper to importlib for optional dependencies
@@ -165,6 +166,8 @@ class harmonics(object):
         self.attributes = dict()
         self.filename = None
         self.flattened = False
+        # create logger for class
+        self.logger = logging.getLogger(__name__)
         # iterator
         self.__index__ = 0
 
@@ -247,7 +250,7 @@ class harmonics(object):
         kwargs.setdefault('verbose', False)
         kwargs.setdefault('compression', None)
         # open the ascii file and extract contents
-        logging.info(self.filename)
+        self.logger.info(self.filename)
         if kwargs['compression'] == 'gzip':
             # read input ascii data from gzip compressed file and split lines
             with gzip.open(self.filename, mode='r') as f:
@@ -351,8 +354,8 @@ class harmonics(object):
             # read netCDF4 dataset
             fileID = netCDF4.Dataset(self.filename, mode='r')
         # Output NetCDF file information
-        logging.info(fileID.filepath())
-        logging.info(list(fileID.variables.keys()))
+        self.logger.info(fileID.filepath())
+        self.logger.info(list(fileID.variables.keys()))
         # read flattened spherical harmonics
         temp = harmonics()
         temp.filename = copy.copy(self.filename)
@@ -457,8 +460,8 @@ class harmonics(object):
             # read HDF5 dataset
             fileID = h5py.File(self.filename, mode='r')
         # Output HDF5 file information
-        logging.info(fileID.filename)
-        logging.info(list(fileID.keys()))
+        self.logger.info(fileID.filename)
+        self.logger.info(list(fileID.keys()))
         # read flattened spherical harmonics
         temp = harmonics()
         temp.filename = copy.copy(self.filename)
@@ -531,8 +534,8 @@ class harmonics(object):
                 self.filename, TIDE=kwargs['tide']
             )
         # Output file information
-        logging.info(self.filename)
-        logging.info(list(Ylms.keys()))
+        self.logger.info(self.filename)
+        self.logger.info(list(Ylms.keys()))
         # copy variables for gravity model
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
@@ -573,8 +576,8 @@ class harmonics(object):
         # read data from SHM file
         Ylms = read_GRACE_harmonics(self.filename, self.lmax, **kwargs)
         # Output file information
-        logging.info(self.filename)
-        logging.info(list(Ylms.keys()))
+        self.logger.info(self.filename)
+        self.logger.info(list(Ylms.keys()))
         # copy variables for gravity model
         self.clm = Ylms['clm'].copy()
         self.slm = Ylms['slm'].copy()
@@ -682,8 +685,8 @@ class harmonics(object):
                 : self.lmax + 1, : self.mmax + 1
             ]
             if kwargs['date']:
-                self.time[t] = np.atleast_1d(object_list[i].time)
-                self.month[t] = np.atleast_1d(object_list[i].month)
+                self.time[t] = object_list[i].time
+                self.month[t] = object_list[i].month
             # append filename to list
             if getattr(object_list[i], 'filename'):
                 self.filename.append(object_list[i].filename)
@@ -782,7 +785,7 @@ class harmonics(object):
         self.filename = pathlib.Path(filename).expanduser().absolute()
         # set default verbosity
         kwargs.setdefault('verbose', False)
-        logging.info(self.filename)
+        self.logger.info(self.filename)
         # open the output file
         fid = open(self.filename, mode='w', encoding='utf8')
         if date:
@@ -963,8 +966,8 @@ class harmonics(object):
         # date created
         fileID.date_created = time.strftime('%Y-%m-%d', time.localtime())
         # Output netCDF structure information
-        logging.info(self.filename)
-        logging.info(list(fileID.variables.keys()))
+        self.logger.info(self.filename)
+        self.logger.info(list(fileID.variables.keys()))
         # Closing the netCDF file
         fileID.close()
 
@@ -1125,8 +1128,8 @@ class harmonics(object):
             '%Y-%m-%d', time.localtime()
         )
         # Output HDF5 structure information
-        logging.info(self.filename)
-        logging.info(list(fileID.keys()))
+        self.logger.info(self.filename)
+        self.logger.info(list(fileID.keys()))
         # Closing the HDF5 file
         fileID.close()
 

@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 """
 associated_legendre.py
-Written by Tyler Sutterley (03/2023)
+Written by Tyler Sutterley (08/2026)
 
 Computes fully-normalized associated Legendre Polynomials
 
 UPDATE HISTORY:
+    Updated 08/2026: use math notations for variables in docstrings
     Updated 03/2023: improve typing for variables in docstrings
     Updated 01/2023: refactored associated legendre polynomials
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -25,7 +26,7 @@ import numpy as np
 
 
 def associated_legendre(LMAX, x, method='holmes', MMAX=None, astype=np.float64):
-    """
+    r"""
     Computes fully-normalized associated Legendre Polynomials and their
     first derivative
 
@@ -36,7 +37,8 @@ def associated_legendre(LMAX, x, method='holmes', MMAX=None, astype=np.float64):
     x: np.ndarray
         elements ranging from -1 to 1
 
-        Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
+        Typically :math:`\cos(\theta)`, where :math:`\theta`
+        is the colatitude in radians
     method: str, default 'holmes'
         Method for computing the associated Legendre polynomials
 
@@ -65,9 +67,10 @@ def associated_legendre(LMAX, x, method='holmes', MMAX=None, astype=np.float64):
 
 
 def plm_colombo(LMAX, x, MMAX=None, astype=np.float64):
-    """
+    r"""
     Computes fully-normalized associated Legendre Polynomials and their
-    first derivative using a Standard forward column method :cite:p:`Colombo:1981vh`
+    first derivative using a Standard forward column method
+    :cite:p:`Colombo:1981vh`
 
     Parameters
     ----------
@@ -76,7 +79,8 @@ def plm_colombo(LMAX, x, MMAX=None, astype=np.float64):
     x: np.ndarray
         elements ranging from -1 to 1
 
-        Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
+        Typically :math:`\cos(\theta)`, where :math:`\theta`
+        is the colatitude in radians
     MMAX: int or NoneType, default None
         maximum order of Associated Legendre polynomials
     astype: np.dtype, default np.float64
@@ -155,9 +159,9 @@ def plm_colombo(LMAX, x, MMAX=None, astype=np.float64):
 
 
 def plm_holmes(LMAX, x, MMAX=None, astype=np.float64):
-    """
+    r"""
     Computes fully-normalized associated Legendre Polynomials and their
-    first derivative using the recursion relation from :cite:p:`Holmes:2002ff`
+    first derivative using the :cite:t:`Holmes:2002ff` recursion relation
 
     Parameters
     ----------
@@ -166,7 +170,8 @@ def plm_holmes(LMAX, x, MMAX=None, astype=np.float64):
     x: np.ndarray
         elements ranging from -1 to 1
 
-        Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
+        Typically :math:`\cos(\theta)`, where :math:`\theta`
+        is the colatitude in radians
     MMAX: int or NoneType, default None
         maximum order of Associated Legendre polynomials
     astype: np.dtype, default np.float64
@@ -291,11 +296,11 @@ def plm_holmes(LMAX, x, MMAX=None, astype=np.float64):
 
 
 def plm_mohlenkamp(LMAX, x, MMAX=None, astype=np.float64):
-    """
+    r"""
     Computes fully-normalized associated Legendre Polynomials and their
-    first derivative using the recursion relation from :cite:p:`Mohlenkamp:2016vv`
+    first derivative using the :cite:t:`Mohlenkamp:2016vv` recursion relation
 
-    Derived from :cite:p:`Szego:1939tn` recurrence formula for Jacobi Polynomials
+    Derived from :cite:t:`Szego:1939tn` recurrence formula for Jacobi Polynomials
 
     Parameters
     ----------
@@ -304,7 +309,8 @@ def plm_mohlenkamp(LMAX, x, MMAX=None, astype=np.float64):
     x: np.ndarray
         elements ranging from -1 to 1
 
-        Typically ``cos(theta)``, where ``theta`` is the colatitude in radians
+        Typically :math:`\cos(\theta)`, where :math:`\theta`
+        is the colatitude in radians
     MMAX: int or NoneType, default None
         maximum order of Associated Legendre polynomials
     astype: np.dtype, default np.float64

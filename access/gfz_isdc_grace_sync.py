@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 gfz_isdc_grace_sync.py
-Written by Tyler Sutterley (10/2025)
+Written by Tyler Sutterley (08/2026)
 Syncs GRACE/GRACE-FO data from the GFZ Information System and Data Center (ISDC)
 
 CALLING SEQUENCE:
@@ -35,6 +35,7 @@ PROGRAM DEPENDENCIES:
     utilities.py: download and management utilities for syncing files
 
 UPDATE HISTORY:
+    Updated 08/2026: change formatting and output of file logs
     Updated 10/2025: switch to https as ftp server is being retired
     Updated 09/2023: don't restrict version number to a set list
     Updated 05/2023: use pathlib to define and operate on paths
@@ -108,17 +109,30 @@ def gfz_isdc_grace_sync(
         # output to log file
         # format: GFZ_ISDC_sync_2002-04-01.log
         today = time.strftime('%Y-%m-%d', time.localtime())
-        LOGFILE = DIRECTORY.joinpath(f'GFZ_ISDC_sync_{today}.log')
-        logging.basicConfig(filename=LOGFILE, level=logging.INFO)
-        logging.info(f'GFZ ISDC Sync Log ({today})')
-        logging.info('CENTERS={0}'.format(','.join(PROC)))
-        logging.info('RELEASES={0}'.format(','.join(DREL)))
+        LOGFILE = gravtk.utilities.get_cache_path(f'GFZ_ISDC_sync_{today}.log')
+        # create a unique log and open the log file
+        fid1 = gravtk.utilities.create_unique_file(LOGFILE, mode='x')
+        # build logger for outputting to log file
+        logger = gravtk.utilities.build_logger(
+            __name__,
+            level=logging.INFO,
+            stream=fid1,
+            format='%(message)s (%(levelname)s)',
+        )
+        logger.info(f'GFZ ISDC Sync Log ({today})')
+        logger.info(f'Filename: {pathlib.Path(sys.argv[0]).name}')
     else:
-        # standard output (terminal output)
-        logging.basicConfig(level=logging.INFO)
+        # build logger for standard output (terminal output)
+        logger = gravtk.utilities.build_logger(__name__, level=logging.INFO)
+
+    # print information about the sync arguments
+    logger.info(f'Directory: {str(DIRECTORY)}')
+    logger.info(f'Center: {",".join(PROC)}')
+    logger.info(f'Release: {",".join(DREL)}')
+    logger.info(f'Version: {",".join(VERSION)}')
 
     # Degree 1 (geocenter) coefficients
-    logging.info('Degree 1 Coefficients:')
+    logger.info('Degree 1 Coefficients:')
     local_dir = DIRECTORY.joinpath('geocenter')
     # check if geocenter directory exists and recursively create if not
     local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
@@ -148,7 +162,7 @@ def gfz_isdc_grace_sync(
         )
 
     # SLR C2,0 coefficients
-    logging.info('C2,0 Coefficients:')
+    logger.info('C2,0 Coefficients:')
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-(05|07|11)_C20_SLR_RL(.*?).txt$', re.VERBOSE)
     # get filenames from remote directory
@@ -174,7 +188,7 @@ def gfz_isdc_grace_sync(
         )
 
     # SLR C3,0 coefficients
-    logging.info('C3,0 Coefficients:')
+    logger.info('C3,0 Coefficients:')
     # compile regular expression operator for remote files
     R1 = re.compile(r'TN-(14)_C30_C20_SLR_GSFC.txt$', re.VERBOSE)
     # get filenames from remote directory
@@ -200,7 +214,7 @@ def gfz_isdc_grace_sync(
         )
 
     # TN-08 GAE, TN-09 GAF and TN-10 GAG ECMWF atmosphere correction products
-    logging.info('TN-08 GAE, TN-09 GAF and TN-10 GAG products:')
+    logger.info('TN-08 GAE, TN-09 GAF and TN-10 GAG products:')
     ECMWF_files = []
     ECMWF_files.append('TN-08_GAE-2_2006032-2010031_0000_EIGEN_G---_0005.gz')
     ECMWF_files.append('TN-09_GAF-2_2010032-2015131_0000_EIGEN_G---_0005.gz')
@@ -237,7 +251,7 @@ def gfz_isdc_grace_sync(
         local_dir.mkdir(mode=MODE, parents=True, exist_ok=True)
         # for each satellite mission (grace, grace-fo)
         for i, mi in enumerate(['grace', 'grace-fo']):
-            logging.info(f'{mi} Newsletters:')
+            logger.info(f'{mi} Newsletters:')
             # compile regular expression operator for remote files
             NAME = mi.upper().replace('-', '_')
             R1 = re.compile(rf'{NAME}_SDS_NL_(\d+).pdf', re.VERBOSE)
@@ -273,7 +287,7 @@ def gfz_isdc_grace_sync(
                     )
 
     # GRACE/GRACE-FO level-2 spherical harmonic products
-    logging.info('GRACE/GRACE-FO L2 Global Spherical Harmonics:')
+    logger.info('GRACE/GRACE-FO L2 Global Spherical Harmonics:')
     # for each processing center (CSR, GFZ, JPL)
     for pr in PROC:
         # for each data release (RL04, RL05, RL06)
@@ -294,7 +308,7 @@ def gfz_isdc_grace_sync(
                     else:
                         drel_str = copy.copy(rl)
                     # print string of exact data product
-                    logging.info(f'{mi}/{pr}/{drel_str}/{ds}')
+                    logger.info(f'{mi}/{pr}/{drel_str}/{ds}')
                     # compile the regular expression operator to find files
                     R1 = re.compile(rf'({ds}-(.*?)(gz|txt|dif))')
                     # get filenames from remote directory
@@ -344,7 +358,8 @@ def gfz_isdc_grace_sync(
 
     # close log file and set permissions level to MODE
     if LOG:
-        LOGFILE.chmod(mode=MODE)
+        fid1.close()
+        os.chmod(fid1.name, mode=MODE)
 
 
 # PURPOSE: list a directory on the GFZ https server
@@ -433,6 +448,8 @@ def http_pull_file(
     CLOBBER=False,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # verify inputs for remote http host
     if isinstance(remote_path, str):
         remote_path = gravtk.utilities.url_split(remote_path)
@@ -458,8 +475,8 @@ def http_pull_file(
     # if file does not exist locally, is to be overwritten, or CLOBBER is set
     if TEST or CLOBBER:
         # Printing files transferred
-        logging.info(f'{remote_file} --> ')
-        logging.info(f'\t{str(local_file)}{OVERWRITE}\n')
+        logger.info(f'{remote_file} --> ')
+        logger.info(f'\t{str(local_file)}{OVERWRITE}\n')
         # if executing copy command (not only printing the files)
         if not LIST:
             # Create and submit request. There are a wide range of exceptions
