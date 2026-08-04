@@ -634,7 +634,7 @@ def create_log_file(status: str = 'validrun', **kwargs) -> str:
     today = calendar.datetime.datetime.now().isoformat(timespec='seconds')
     default_logfile = f'{status}_{today}_PID-{os.getpid():d}.log'
     # create a unique log and open the log file
-    fid = create_unique_file(get_cache_path(default_logfile))
+    fid = create_unique_file(get_cache_path(default_logfile), mode='x')
     output_logfile = str(fid.name)
     logger = build_logger(
         status,
