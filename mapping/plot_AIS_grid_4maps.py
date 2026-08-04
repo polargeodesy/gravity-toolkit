@@ -379,8 +379,6 @@ def add_plot_scale(ax, X, Y, dx, dy, masked, fc1='w', fc2='k'):
         color=fc2,
         zorder=6,
     )
-    # get logger
-    logger = logging.getLogger(__name__)
 
 
 # plot grid program

@@ -651,19 +651,21 @@ def main():
         logger.critical(f'process id {os.getpid():d} failed')
         logger.error(traceback.format_exc())
         if args.log:  # write failed job completion log file
-            gravtk.utilities.create_log_file(
+            logfile = gravtk.utilities.create_log_file(
                 'failedrun',
                 filename=pathlib.Path(sys.argv[0]).name,
                 arguments=vars(args),
             )
+            logger.info(logfile)
     else:
         if args.log:  # write successful job completion log file
-            gravtk.utilities.create_log_file(
+            logfile = gravtk.utilities.create_log_file(
                 'validrun',
                 filename=pathlib.Path(sys.argv[0]).name,
                 arguments=vars(args),
                 output=output_file,
             )
+            logger.info(logfile)
 
 
 # run main program

@@ -142,7 +142,7 @@ def run_plot(
             if valid:
                 mm = np.flatnonzero(dinput[:, 0] == m)
                 (tdec[t],) = dinput[mm, 1]
-                (data[t],) = dinput[mm, 2] - dinput[:, 2].mean()
+                (data[t],) = dinput[mm, 2] - dinput[0, 2]
                 if error:
                     (err[t],) = dinput[mm, 3]
     else:
