@@ -13,6 +13,7 @@ PYTHON DEPENDENCIES:
 UPDATE HISTORY:
     Updated 08/2026: added function to build file loggers
         added function to write log files for valid and failed program runs
+        use logging.LoggerAdapter to include parent filenames in logs
     Updated 07/2026: can use an environment variable to set cache directory
         this overrides the default platform-specific cache directory
         add function to create HTML representations of custom classes
@@ -612,11 +613,13 @@ def create_log_file(status: str = 'validrun', **kwargs) -> str:
             - ``'validrun'``: successful completion of run
             - ``'failedrun'``: unsuccessful run of program
     filename: str, default ''
-        name of the log file
+        name of the parent file
     arguments: dict, default {}
         dictionary of argument names and values
     output: list, default []
         list of output files
+    kwargs: dict
+        Additional keyword arguments to add to the log
 
     Returns
     -------
@@ -624,7 +627,6 @@ def create_log_file(status: str = 'validrun', **kwargs) -> str:
         path to the output log file
     """
     # get default arguments
-    program_filename = kwargs.pop('filename', '')
     program_arguments = kwargs.pop('arguments', {})
     output_files = kwargs.pop('output', [])
     # validate output files as list
@@ -636,31 +638,38 @@ def create_log_file(status: str = 'validrun', **kwargs) -> str:
     # create a unique log and open the log file
     fid = create_unique_file(get_cache_path(default_logfile), mode='x')
     output_logfile = str(fid.name)
-    logger = build_logger(
-        status,
-        level=logging.INFO,
-        stream=fid,
-        format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',
+    # adapt logger to include the parent file in the log messages
+    extra = dict(parentFile=kwargs.pop('filename', ''))
+    logger = logging.LoggerAdapter(
+        build_logger(
+            status,
+            level=logging.INFO,
+            stream=fid,
+            format='%(parentFile)s:%(name)s:%(message)s',
+        ),
+        extra=extra,
     )
-    # log the the program name
-    logger.info(f'Filename: {program_filename}')
     # log argument values sorted alphabetically
-    logger.info('Arguments:')
-    for arg, val in sorted(program_arguments.items()):
-        logger.info(f'{arg}: {val}')
+    if any(program_arguments):
+        logger.info('ARGUMENTS')
+        for arg, val in sorted(program_arguments.items()):
+            logger.info(f'args.{arg}: {val}')
+    # any other entries for the log
+    if any(kwargs):
+        # log other parameters
+        logger.info('PARAMETERS')
+        for key, val in kwargs.items():
+            logger.info(f'{key}: {val}')
     # any output files
     if status.lower() == 'validrun' and any(output_files):
         # log output files
-        logger.info('Output Files:')
+        logger.info('OUTPUT FILES')
         for f in output_files:
             logger.info(f)
-    # any other entries for the log
-    for key, val in kwargs.items():
-        logger.info(f'{key}: {val}')
     # trackback report
     if status.lower() == 'failedrun':
         # log traceback error
-        logger.info('Traceback Report:')
+        logger.info('TRACEBACK REPORT')
         traceback.print_exc(file=fid)
     # close the log file
     fid.close()
