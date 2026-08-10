@@ -1,6 +1,6 @@
-====================
-``fourier_legendre``
-====================
+====================================
+``gravity_toolkit.fourier_legendre``
+====================================
 
 - Computes Fourier coefficients of the associated Legendre functions
 

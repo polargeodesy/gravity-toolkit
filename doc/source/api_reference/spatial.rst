@@ -1,6 +1,6 @@
-===========
-``spatial``
-===========
+===========================
+``gravity_toolkit.spatial``
+===========================
 
 Spatial data class for reading, writing and processing spatial data
 

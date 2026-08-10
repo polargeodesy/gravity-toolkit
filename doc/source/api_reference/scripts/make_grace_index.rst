@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/utilities/make_grace_index.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/make_grace_index.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: make_grace_index.py
+    :module: gravity_toolkit.scripts.make_grace_index
     :func: arguments
     :prog: make_grace_index.py
     :nodescription:

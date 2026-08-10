@@ -7,14 +7,14 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/run_sea_level_equation.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/run_sea_level_equation.py
 
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: run_sea_level_equation.py
+    :module: gravity_toolkit.scripts.run_sea_level_equation
     :func: arguments
     :prog: run_sea_level_equation.py
     :nodescription:

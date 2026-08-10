@@ -1,6 +1,6 @@
-========================
-``gen_averaging_kernel``
-========================
+========================================
+``gravity_toolkit.gen_averaging_kernel``
+========================================
 
 - Generates averaging kernel coefficients which minimize the total error
 

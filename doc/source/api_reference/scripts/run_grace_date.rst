@@ -10,13 +10,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/utilities/run_grace_date.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/run_grace_date.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: run_grace_date.py
+    :module: gravity_toolkit.scripts.run_grace_date
     :func: arguments
     :prog: run_grace_date.py
     :nodescription:

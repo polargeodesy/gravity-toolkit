@@ -78,5 +78,10 @@ from gravity_toolkit.sea_level_equation import sea_level_equation
 from gravity_toolkit.spatial import spatial, scaling_factors
 from gravity_toolkit.units import units
 
+# executable scripts
+from gravity_toolkit import datasets
+from gravity_toolkit import mapping
+from gravity_toolkit import scripts
+
 # get version number
 __version__ = gravity_toolkit.version.version

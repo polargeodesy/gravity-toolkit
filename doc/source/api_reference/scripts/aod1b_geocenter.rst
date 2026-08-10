@@ -12,13 +12,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/dealiasing/aod1b_geocenter.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/aod1b_geocenter.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: aod1b_geocenter.py
+    :module: gravity_toolkit.scripts.aod1b_geocenter
     :func: arguments
     :prog: aod1b_geocenter.py
     :nodescription:

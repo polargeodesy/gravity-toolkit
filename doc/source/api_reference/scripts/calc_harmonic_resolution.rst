@@ -8,13 +8,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/calc_harmonic_resolution.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/calc_harmonic_resolution.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: calc_harmonic_resolution.py
+    :module: gravity_toolkit.scripts.calc_harmonic_resolution
     :func: arguments
     :prog: calc_harmonic_resolution.py
     :nodescription:

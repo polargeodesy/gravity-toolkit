@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/mapping/plot_global_grid_maps.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/mapping/plot_global_grid_maps.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: plot_global_grid_maps.py
+    :module: gravity_toolkit.mapping.plot_global_grid_maps
     :func: arguments
     :prog: plot_global_grid_maps.py
     :nodescription:

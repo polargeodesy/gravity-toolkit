@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/calc_sensitivity_kernel.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/calc_sensitivity_kernel.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: calc_sensitivity_kernel.py
+    :module: gravity_toolkit.scripts.calc_sensitivity_kernel
     :func: arguments
     :prog: calc_sensitivity_kernel.py
     :nodescription:

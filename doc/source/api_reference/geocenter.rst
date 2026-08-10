@@ -1,6 +1,6 @@
-=============
-``geocenter``
-=============
+=============================
+``gravity_toolkit.geocenter``
+=============================
 
 Data class for reading and processing geocenter data
 

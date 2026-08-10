@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/mascon_reconstruct.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/mascon_reconstruct.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: mascon_reconstruct.py
+    :module: gravity_toolkit.scripts.mascon_reconstruct
     :func: arguments
     :prog: mascon_reconstruct.py
     :nodescription:
