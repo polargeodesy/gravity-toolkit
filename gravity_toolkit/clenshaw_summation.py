@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 clenshaw_summation.py
-Written by Tyler Sutterley (07/2026)
+Written by Tyler Sutterley (08/2026)
 Calculates the spatial field for a series of spherical harmonics for a
     sequence of ungridded points
 
@@ -49,6 +49,7 @@ REFERENCES:
         Bollettino di Geodesia e Scienze (1982)
 
 UPDATE HISTORY:
+    Updated 08/2026: simplify Clenshaw summation to reduce memory usage
     Updated 07/2026: use np.einsum for spherical harmonic summations
         use np.radians to convert from degrees to radians
     Updated 04/2023: allow love numbers to be None for custom units case
@@ -179,7 +180,8 @@ def clenshaw_summation(
         a_m = np.sqrt((2.0 * m + 3.0) / (2.0 * m + 2.0))
         cs_m = _clenshaw(t, f, m, ylm, LMAX, SCALE=SCALE)
         # update summation and discard imaginary component
-        s_m = a_m * u * s_m + (cs_m * m_phi[:, m]).real
+        s_m *= a_m * u
+        s_m += (cs_m * m_phi[:, m]).real
     # add the final terms to calculate spatial field
     cs_m = _clenshaw(t, f, 0, ylm, LMAX, SCALE=SCALE)
     spatial = np.sqrt(3.0) * u * s_m + cs_m.real
@@ -190,14 +192,15 @@ def clenshaw_summation(
 # PURPOSE: compute Clenshaw summation of the fully normalized associated
 # Legendre's function for constant order m
 def _clenshaw(t, f, m, Ylm1, lmax, SCALE=1e-280):
-    """
+    r"""
     Compute conditioned arrays for Clenshaw summation from the fully-normalized
     associated Legendre's function for an order m
 
     Parameters
     ----------
     t: np.ndarray
-        elements ranging from -1 to 1, typically cos(th)
+        elements ranging from -1 to 1, typically :math:`\cos(\theta)`,
+        where :math:`\theta` is the colatitude in radians
     f: np.ndarray
         degree dependent factors
     m: int
