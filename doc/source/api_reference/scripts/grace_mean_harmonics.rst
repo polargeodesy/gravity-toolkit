@@ -7,13 +7,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/grace_mean_harmonics.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/grace_mean_harmonics.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: grace_mean_harmonics.py
+    :module: gravity_toolkit.scripts.grace_mean_harmonics
     :func: arguments
     :prog: grace_mean_harmonics.py
     :nodescription:

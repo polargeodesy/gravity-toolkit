@@ -1,6 +1,6 @@
-============================
-``time_series.lomb_scargle``
-============================
+============================================
+``gravity_toolkit.time_series.lomb_scargle``
+============================================
 
 - Wrapper function for computing Lomb-Scargle periodograms using ``scipy.signal.lombscargle``
 

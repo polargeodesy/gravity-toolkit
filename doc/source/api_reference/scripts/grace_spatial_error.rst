@@ -8,13 +8,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/grace_spatial_error.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/grace_spatial_error.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: grace_spatial_error.py
+    :module: gravity_toolkit.scripts.grace_spatial_error
     :func: arguments
     :prog: grace_spatial_error.py
     :nodescription:

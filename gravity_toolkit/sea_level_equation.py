@@ -91,6 +91,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 08/2026: use upstream file logger for verbose output
+        simplify Clenshaw summation to reduce memory usage
     Updated 07/2026: use np.einsum for spherical harmonic summations
         use np.radians to convert from degrees to radians
     Updated 06/2025: added option to set the density of sea water (g/cm^3)
@@ -371,7 +372,8 @@ def sea_level_equation(
             cs_m = _clenshaw(np.cos(th), m, Ylm1, LMAX, SCALE=SCALE)
             g = np.einsum('h...,p...->ph...', cs_m, m_phi[:, m])
             # update summation and discard imaginary component
-            s_m = a_m * u * s_m + g[ii, jj].real
+            s_m *= a_m * u
+            s_m += g[ii, jj].real
         # add the l=0/m=0 term
         cs_m = _clenshaw(np.cos(th), 0, Ylm1, LMAX, SCALE=SCALE)
         gs_m = np.kron(np.ones((nphi, 1)), cs_m.real)
@@ -427,26 +429,27 @@ def sea_level_equation(
 # PURPOSE: compute Clenshaw summation of the fully normalized associated
 # Legendre's function for constant order m
 def _clenshaw(t, m, Ylm1, lmax, SCALE=1e-280):
-    """
+    r"""
     Compute conditioned arrays for Clenshaw summation from the fully-normalized
     associated Legendre's function for an order m
 
     Parameters
     ----------
     t: np.ndarray
-        elements ranging from -1 to 1, typically cos(th)
+        elements ranging from -1 to 1, typically :math:`\cos(\theta)`,
+        where :math:`\theta` is the colatitude in radians
     m: int
         spherical harmonic order
     Ylm1: np.ndarray
         complex form of spherical harmonics
     lmax: int
-        maximum spherical harmonic degree
+        maximum spherical harmonic degree (truncation limit)
     SCALE: float, default 1e-280
         scaling factor to prevent underflow in Clenshaw summation
 
     Returns
     -------
-    s_m_c: np.ndarray
+    s_m: np.ndarray
         conditioned array for clenshaw summation
     """
     # allocate for output matrix

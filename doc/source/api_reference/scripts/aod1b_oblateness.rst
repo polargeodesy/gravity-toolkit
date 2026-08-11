@@ -12,13 +12,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/dealiasing/aod1b_oblateness.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/aod1b_oblateness.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: aod1b_oblateness.py
+    :module: gravity_toolkit.scripts.aod1b_oblateness
     :func: arguments
     :prog: aod1b_oblateness.py
     :nodescription:

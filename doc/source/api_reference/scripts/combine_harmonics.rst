@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/combine_harmonics.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/combine_harmonics.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: combine_harmonics.py
+    :module: gravity_toolkit.scripts.combine_harmonics
     :func: arguments
     :prog: combine_harmonics.py
     :nodescription:

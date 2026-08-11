@@ -7,13 +7,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/access/gfz_icgem_costg_ftp.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/gfz_icgem_costg_ftp.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: gfz_icgem_costg_ftp.py
+    :module: gravity_toolkit.datasets.gfz_icgem_costg_ftp
     :func: arguments
     :prog: gfz_icgem_costg_ftp.py
     :nodescription:

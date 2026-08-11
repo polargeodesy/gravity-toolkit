@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/utilities/quick_mascon_plot.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/quick_mascon_plot.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: quick_mascon_plot.py
+    :module: gravity_toolkit.scripts.quick_mascon_plot
     :func: arguments
     :prog: quick_mascon_plot.py
     :nodescription:

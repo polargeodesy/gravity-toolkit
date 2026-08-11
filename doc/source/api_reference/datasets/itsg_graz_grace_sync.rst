@@ -7,13 +7,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/access/itsg_graz_grace_sync.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/itsg_graz_grace_sync.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: itsg_graz_grace_sync.py
+    :module: gravity_toolkit.datasets.itsg_graz_grace_sync
     :func: arguments
     :prog: itsg_graz_grace_sync.py
     :nodescription:

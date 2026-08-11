@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/convert_harmonics.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/convert_harmonics.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: convert_harmonics.py
+    :module: gravity_toolkit.scripts.convert_harmonics
     :func: arguments
     :prog: convert_harmonics.py
     :nodescription:

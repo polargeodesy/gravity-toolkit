@@ -1,6 +1,6 @@
-===================
-``time_series.fit``
-===================
+===================================
+``gravity_toolkit.time_series.fit``
+===================================
 
 - Utilities for fitting time-series data with regression models
 

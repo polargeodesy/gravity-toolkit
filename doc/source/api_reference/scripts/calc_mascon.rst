@@ -10,13 +10,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/calc_mascon.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/calc_mascon.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: calc_mascon.py
+    :module: gravity_toolkit.scripts.calc_mascon
     :func: arguments
     :prog: calc_mascon.py
     :nodescription:

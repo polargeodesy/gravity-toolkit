@@ -7,13 +7,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/access/gfz_isdc_dealiasing_sync.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/gfz_isdc_dealiasing_sync.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: gfz_isdc_dealiasing_sync.py
+    :module: gravity_toolkit.datasets.gfz_isdc_dealiasing_sync
     :func: arguments
     :prog: gfz_isdc_dealiasing_sync.py
     :nodescription:

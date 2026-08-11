@@ -1,6 +1,6 @@
-=============
-``harmonics``
-=============
+=============================
+``gravity_toolkit.harmonics``
+=============================
 
 Spherical harmonic data class for processing GRACE/GRACE-FO Level-2 data
 

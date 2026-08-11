@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/mapping/plot_AIS_grid_3maps.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/mapping/plot_AIS_grid_3maps.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: plot_AIS_grid_3maps.py
+    :module: gravity_toolkit.mapping.plot_AIS_grid_3maps
     :func: arguments
     :prog: plot_AIS_grid_3maps.py
     :nodescription:

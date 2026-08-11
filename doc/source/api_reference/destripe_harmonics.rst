@@ -1,6 +1,6 @@
-======================
-``destripe_harmonics``
-======================
+======================================
+``gravity_toolkit.destripe_harmonics``
+======================================
 
 - Filters spherical harmonic coefficients for correlated "striping" errors following :cite:t:`Swenson:2006hu`
 
