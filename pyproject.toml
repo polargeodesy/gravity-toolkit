@@ -66,6 +66,66 @@ aws = ["dask", "obstore", "pyarrow", "s3fs", "zarr>=3"]
 dev = ["flake8", "pytest>=4.6", "pytest-cov", "pytest-xdist"]
 map = ["cartopy", "gdal", "pyshp", "shapely"]
 
+[project.scripts]
+# Data Access (datasets)
+"cnes_grace_sync.py" = "gravity_toolkit.datasets.cnes_grace_sync:main"
+"esa_costg_swarm_sync.py" = "gravity_toolkit.datasets.esa_costg_swarm_sync:main"
+"gfz_icgem_costg_ftp.py" = "gravity_toolkit.datasets.gfz_icgem_costg_ftp:main"
+"gfz_isdc_dealiasing_sync.py" = "gravity_toolkit.datasets.gfz_isdc_dealiasing_sync:main"
+"gfz_isdc_grace_sync.py" = "gravity_toolkit.datasets.gfz_isdc_grace_sync:main"
+"itsg_graz_grace_sync.py" = "gravity_toolkit.datasets.itsg_graz_grace_sync:main"
+"podaac_cumulus.py" = "gravity_toolkit.datasets.podaac_cumulus:main"
+# Dealiasing (dealiasing)
+"aod1b_geocenter.py" = "gravity_toolkit.scripts.aod1b_geocenter:main"
+"aod1b_oblateness.py" = "gravity_toolkit.scripts.aod1b_oblateness:main"
+"dealiasing_global_uplift.py" = "gravity_toolkit.scripts.dealiasing_global_uplift:main"
+"dealiasing_monthly_mean.py" = "gravity_toolkit.scripts.dealiasing_monthly_mean:main"
+# Degree-1 (geocenter)
+"calc_degree_one.py" = "gravity_toolkit.scripts.calc_degree_one:main"
+"geocenter_compare_tellus.py" = "gravity_toolkit.scripts.geocenter_compare_tellus:main"
+"geocenter_monte_carlo.py" = "gravity_toolkit.scripts.geocenter_monte_carlo:main"
+"geocenter_ocean_models.py" = "gravity_toolkit.scripts.geocenter_ocean_models:main"
+"geocenter_processing_centers.py" = "gravity_toolkit.scripts.geocenter_processing_centers:main"
+"monte_carlo_degree_one.py" = "gravity_toolkit.scripts.monte_carlo_degree_one:main"
+# Geographic Plot Tools (mapping)
+"plot_AIS_grid_3maps.py" = "gravity_toolkit.mapping.plot_AIS_grid_3maps:main"
+"plot_AIS_grid_4maps.py" = "gravity_toolkit.mapping.plot_AIS_grid_4maps:main"
+"plot_AIS_grid_maps.py" = "gravity_toolkit.mapping.plot_AIS_grid_maps:main"
+"plot_AIS_grid_movie.py" = "gravity_toolkit.mapping.plot_AIS_grid_movie:main"
+"plot_AIS_GrIS_maps.py" = "gravity_toolkit.mapping.plot_AIS_GrIS_maps:main"
+"plot_AIS_regional_maps.py" = "gravity_toolkit.mapping.plot_AIS_regional_maps:main"
+"plot_AIS_regional_movie.py" = "gravity_toolkit.mapping.plot_AIS_regional_movie:main"
+"plot_global_grid_3maps.py" = "gravity_toolkit.mapping.plot_global_grid_3maps:main"
+"plot_global_grid_4maps.py" = "gravity_toolkit.mapping.plot_global_grid_4maps:main"
+"plot_global_grid_5maps.py" = "gravity_toolkit.mapping.plot_global_grid_5maps:main"
+"plot_global_grid_9maps.py" = "gravity_toolkit.mapping.plot_global_grid_9maps:main"
+"plot_global_grid_maps.py" = "gravity_toolkit.mapping.plot_global_grid_maps:main"
+"plot_global_grid_movie.py" = "gravity_toolkit.mapping.plot_global_grid_movie:main"
+"plot_GrIS_grid_3maps.py" = "gravity_toolkit.mapping.plot_GrIS_grid_3maps:main"
+"plot_GrIS_grid_5maps.py" = "gravity_toolkit.mapping.plot_GrIS_grid_5maps:main"
+"plot_GrIS_grid_maps.py" = "gravity_toolkit.mapping.plot_GrIS_grid_maps:main"
+"plot_GrIS_grid_movie.py" = "gravity_toolkit.mapping.plot_GrIS_grid_movie:main"
+"plot_QML_grid_3maps.py" = "gravity_toolkit.mapping.plot_QML_grid_3maps:main"
+# Use Cases / Processing (scripts)
+"calc_harmonic_resolution.py" = "gravity_toolkit.scripts.calc_harmonic_resolution:main"
+"calc_mascon.py" = "gravity_toolkit.scripts.calc_mascon:main"
+"calc_sensitivity_kernel.py" = "gravity_toolkit.scripts.calc_sensitivity_kernel:main"
+"combine_harmonics.py" = "gravity_toolkit.scripts.combine_harmonics:main"
+"convert_harmonics.py" = "gravity_toolkit.scripts.convert_harmonics:main"
+"grace_mean_harmonics.py" = "gravity_toolkit.scripts.grace_mean_harmonics:main"
+"grace_raster_grids.py" = "gravity_toolkit.scripts.grace_raster_grids:main"
+"grace_spatial_error.py" = "gravity_toolkit.scripts.grace_spatial_error:main"
+"grace_spatial_maps.py" = "gravity_toolkit.scripts.grace_spatial_maps:main"
+"make_grace_index.py" = "gravity_toolkit.scripts.make_grace_index:main"
+"mascon_reconstruct.py" = "gravity_toolkit.scripts.mascon_reconstruct:main"
+"piecewise_grace_maps.py" = "gravity_toolkit.scripts.piecewise_grace_maps:main"
+"quick_mascon_plot.py" = "gravity_toolkit.scripts.quick_mascon_plot:main"
+"quick_mascon_regress.py" = "gravity_toolkit.scripts.quick_mascon_regress:main"
+"regress_grace_maps.py" = "gravity_toolkit.scripts.regress_grace_maps:main"
+"run_grace_date.py" = "gravity_toolkit.scripts.run_grace_date:main"
+"run_sea_level_equation.py" = "gravity_toolkit.scripts.run_sea_level_equation:main"
+"scale_grace_maps.py" = "gravity_toolkit.scripts.scale_grace_maps:main"
+
 [tool.setuptools.packages.find]
 exclude = ["test*", "run*"]
 

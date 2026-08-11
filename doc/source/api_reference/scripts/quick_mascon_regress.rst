@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/utilities/quick_mascon_regress.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/quick_mascon_regress.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: quick_mascon_regress.py
+    :module: gravity_toolkit.scripts.quick_mascon_regress
     :func: arguments
     :prog: quick_mascon_regress.py
     :nodescription:

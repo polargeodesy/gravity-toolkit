@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/dealiasing/dealiasing_global_uplift.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/dealiasing_global_uplift.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: dealiasing_global_uplift.py
+    :module: gravity_toolkit.scripts.dealiasing_global_uplift
     :func: arguments
     :prog: dealiasing_global_uplift.py
     :nodescription:

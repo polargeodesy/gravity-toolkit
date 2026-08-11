@@ -1,6 +1,6 @@
-====================
-``degree_amplitude``
-====================
+====================================
+``gravity_toolkit.degree_amplitude``
+====================================
 
 - Calculates the amplitude of each spherical harmonic degree
 

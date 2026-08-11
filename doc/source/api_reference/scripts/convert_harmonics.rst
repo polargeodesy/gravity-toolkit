@@ -12,7 +12,7 @@ Calling Sequence
 ################
 
 .. argparse::
-    :filename: convert_harmonics.py
+    :module: gravity_toolkit.scripts.convert_harmonics
     :func: arguments
     :prog: convert_harmonics.py
     :nodescription:

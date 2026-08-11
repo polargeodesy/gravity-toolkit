@@ -12,13 +12,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/dealiasing/dealiasing_monthly_mean.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/dealiasing_monthly_mean.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: dealiasing_monthly_mean.py
+    :module: gravity_toolkit.scripts.dealiasing_monthly_mean
     :func: arguments
     :prog: dealiasing_monthly_mean.py
     :nodescription:

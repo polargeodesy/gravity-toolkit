@@ -8,13 +8,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/access/podaac_cumulus.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/podaac_cumulus.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: podaac_cumulus.py
+    :module: gravity_toolkit.datasets.podaac_cumulus
     :func: arguments
     :prog: podaac_cumulus.py
     :nodescription:

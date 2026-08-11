@@ -9,13 +9,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/grace_raster_grids.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/grace_raster_grids.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: grace_raster_grids.py
+    :module: gravity_toolkit.scripts.grace_raster_grids
     :func: arguments
     :prog: grace_raster_grids.py
     :nodescription:
