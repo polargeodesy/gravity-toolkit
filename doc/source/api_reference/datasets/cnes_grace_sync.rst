@@ -7,13 +7,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/access/cnes_grace_sync.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/cnes_grace_sync.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: cnes_grace_sync.py
+    :module: gravity_toolkit.datasets.cnes_grace_sync
     :func: arguments
     :prog: cnes_grace_sync.py
     :nodescription:

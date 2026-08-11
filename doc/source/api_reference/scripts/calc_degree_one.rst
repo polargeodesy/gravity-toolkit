@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/geocenter/calc_degree_one.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/calc_degree_one.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: calc_degree_one.py
+    :module: gravity_toolkit.scripts.calc_degree_one
     :func: arguments
     :prog: calc_degree_one.py
     :nodescription:

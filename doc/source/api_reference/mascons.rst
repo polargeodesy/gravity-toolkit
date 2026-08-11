@@ -1,6 +1,6 @@
-===========
-``mascons``
-===========
+===========================
+``gravity_toolkit.mascons``
+===========================
 
 Conversion routines for publicly available GRACE/GRACE-FO mascon solutions
 

@@ -1,6 +1,6 @@
-=================
-``gen_disc_load``
-=================
+=================================
+``gravity_toolkit.gen_disc_load``
+=================================
 
 - Calculates gravitational spherical harmonic coefficients for a uniform disc load
 

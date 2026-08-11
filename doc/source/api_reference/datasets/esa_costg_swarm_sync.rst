@@ -7,13 +7,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/access/esa_costg_swarm_sync.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/esa_costg_swarm_sync.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: esa_costg_swarm_sync.py
+    :module: gravity_toolkit.datasets.esa_costg_swarm_sync
     :func: arguments
     :prog: esa_costg_swarm_sync.py
     :nodescription:

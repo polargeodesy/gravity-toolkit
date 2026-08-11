@@ -1,6 +1,6 @@
-========
-``time``
-========
+========================
+``gravity_toolkit.time``
+========================
 
 Utilities for calculating time operations
 

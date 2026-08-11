@@ -11,13 +11,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/scale_grace_maps.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/scale_grace_maps.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: scale_grace_maps.py
+    :module: gravity_toolkit.scripts.scale_grace_maps
     :func: arguments
     :prog: scale_grace_maps.py
     :nodescription:

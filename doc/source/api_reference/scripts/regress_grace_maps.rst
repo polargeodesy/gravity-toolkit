@@ -6,13 +6,13 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/regress_grace_maps.py
+.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/regress_grace_maps.py
 
 Calling Sequence
 ################
 
 .. argparse::
-    :filename: regress_grace_maps.py
+    :module: gravity_toolkit.scripts.regress_grace_maps
     :func: arguments
     :prog: regress_grace_maps.py
     :nodescription:
