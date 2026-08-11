@@ -16,8 +16,8 @@ internationally from the `GFZ Information System and Data Center (ISDC) <http://
 
 .. tip::
     There are programs within this repository that can sync with both of these data archives:
-    :py:mod:`podaac_cumulus.py` for `PO.DAAC AWS <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/podaac_cumulus.py>`_ and
-    :py:mod:`gfz_isdc_grace_ftp.py` for the `GFZ ISDC <https://github.com/tsutterley/gravity-toolkit/blob/main/scripts/gfz_isdc_grace_ftp.py>`_.
+    :py:mod:`podaac_cumulus.py` for `PO.DAAC AWS <https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/podaac_cumulus.py>`_ and
+    :py:mod:`gfz_isdc_grace_ftp.py` for the `GFZ ISDC <https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/gfz_isdc_grace_ftp.py>`_.
 
 Product Identifier
 ##################
