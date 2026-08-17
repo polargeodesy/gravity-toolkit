@@ -800,8 +800,8 @@ def monte_carlo_degree_one(
                 'lmh...,lm...->mh...', plmout[l2, :, :], GRACE_Ylms.ilm[l2, :]
             )
             # Multiplying by c/s(phi#m) to get surface density in cmwe (lon,lat)
-            # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
-            # The summation over spherical harmonic order is in this multiplication
+            # resultant matrices are phiXtheta
+            # (summation over spherical harmonic order is in this multiplication)
             rmass = np.einsum('mp...,mh...->ph...', m_phi, pconv).real
             # calculate G matrix parameters through a summation of each latitude
             # summation of integration factors, Legendre polynomials,
@@ -849,8 +849,8 @@ def monte_carlo_degree_one(
             )
 
             # Multiplying by c/s(phi#m) to get surface density in cm w.e. (lonxlat)
-            # ccos/ssin are mXphi, pcos/psin are mXtheta: resultant matrices are phiXtheta
-            # The summation over spherical harmonic order is in this multiplication
+            # resultant matrices are phiXtheta
+            # (summation over spherical harmonic order is in this multiplication)
             lmass = np.einsum('mp...,mh...->ph...', m_phi, pconv).real
 
             # use sea level fingerprints or eustatic from GRACE land components

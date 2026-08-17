@@ -120,6 +120,8 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 08/2026: use default file logger for valid and failed program runs
+        include additional attributes to output files for CF compliance
+        use np.einsum and Euler's formula for spherical harmonic summations
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
         use attributes from units class for writing to netCDF4/HDF5 files
@@ -243,6 +245,8 @@ def grace_spatial_error(
     attributes['product_name'] = DSET
     attributes['product_type'] = 'gravity_field'
     attributes['title'] = 'GRACE/GRACE-FO Spatial Error'
+    # add citation to John's 2006 paper
+    attributes['citation'] = 'http://doi.org/10.1029/2005GL025305'
     # list object of output files for file logs (full path)
     output_files = []
 
@@ -308,6 +312,9 @@ def grace_spatial_error(
     # add attributes for input GRACE/GRACE-FO spherical harmonics
     for att_name, att_val in Ylms['attributes'].items():
         attributes[att_name] = att_val
+    # get the start and end dates for the GRACE/GRACE-FO data
+    SD = Ylms.attrs['start_date'].min().astype('datetime64[D]')
+    ED = Ylms.attrs['end_date'].max().astype('datetime64[D]')
 
     # use a mean file for the static field to remove
     if MEAN_FILE:
@@ -416,7 +423,7 @@ def grace_spatial_error(
         nsmth = np.int64(delta_Ylms.month)
 
     # Output spatial data object
-    delta = gravtk.spatial()
+    grid = gravtk.spatial()
     # Output Degree Spacing
     dlon, dlat = (DDEG[0], DDEG[0]) if (len(DDEG) == 1) else (DDEG[0], DDEG[1])
     # Output Degree Interval
@@ -424,21 +431,21 @@ def grace_spatial_error(
         # (-180:180,90:-90)
         nlon = np.int64((360.0 / dlon) + 1.0)
         nlat = np.int64((180.0 / dlat) + 1.0)
-        delta.lon = -180 + dlon * np.arange(0, nlon)
-        delta.lat = 90.0 - dlat * np.arange(0, nlat)
+        grid.lon = -180 + dlon * np.arange(0, nlon)
+        grid.lat = 90.0 - dlat * np.arange(0, nlat)
     elif INTERVAL == 2:
         # (Degree spacing)/2
-        delta.lon = np.arange(-180 + dlon / 2.0, 180 + dlon / 2.0, dlon)
-        delta.lat = np.arange(90.0 - dlat / 2.0, -90.0 - dlat / 2.0, -dlat)
-        nlon = len(delta.lon)
-        nlat = len(delta.lat)
+        grid.lon = np.arange(-180 + dlon / 2.0, 180 + dlon / 2.0, dlon)
+        grid.lat = np.arange(90.0 - dlat / 2.0, -90.0 - dlat / 2.0, -dlat)
+        nlon = len(grid.lon)
+        nlat = len(grid.lat)
     elif INTERVAL == 3:
         # non-global grid set with BOUNDS parameter
         minlon, maxlon, minlat, maxlat = BOUNDS.copy()
-        delta.lon = np.arange(minlon + dlon / 2.0, maxlon + dlon / 2.0, dlon)
-        delta.lat = np.arange(maxlat - dlat / 2.0, minlat - dlat / 2.0, -dlat)
-        nlon = len(delta.lon)
-        nlat = len(delta.lat)
+        grid.lon = np.arange(minlon + dlon / 2.0, maxlon + dlon / 2.0, dlon)
+        grid.lat = np.arange(maxlat - dlat / 2.0, minlat - dlat / 2.0, -dlat)
+        nlon = len(grid.lon)
+        nlat = len(grid.lat)
 
     # output spatial units
     # dfactor is the degree dependent coefficients
@@ -457,22 +464,32 @@ def grace_spatial_error(
     attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
     attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm^3'
     attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
+    # add geospatial attributes
+    attributes['geospatial_lat_min'] = grid.lat.min()
+    attributes['geospatial_lat_max'] = grid.lat.max()
+    attributes['geospatial_lon_min'] = grid.lon.min()
+    attributes['geospatial_lon_max'] = grid.lon.max()
+    attributes['geospatial_lat_units'] = 'degrees_north'
+    attributes['geospatial_lon_units'] = 'degrees_east'
+    # add temporal attributes
+    attributes['time_coverage_start'] = np.datetime_as_string(SD)
+    attributes['time_coverage_end'] = np.datetime_as_string(ED)
+    attributes['time_coverage_duration'] = str(ED - SD)
     # add attributes to output spatial object
     attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
-    delta.attributes['ROOT'] = attributes
+    grid.attributes['ROOT'] = attributes
 
     # Computing plms for converting to spatial domain
-    phi = np.radians(delta.lon[np.newaxis, :])
-    theta = np.radians(90.0 - delta.lat)
+    phi = np.radians(grid.lon)
+    theta = np.radians(90.0 - grid.lat)
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
     # square of legendre polynomials truncated to order MMAX
     mm = np.arange(0, MMAX + 1)
     PLM2 = PLM[:, mm, :] ** 2
 
     # Calculating cos(m*phi)^2 and sin(m*phi)^2
-    m = delta_Ylms.m[:, np.newaxis]
-    ccos = np.cos(np.dot(m, phi)) ** 2
-    ssin = np.sin(np.dot(m, phi)) ** 2
+    mp = np.einsum('m...,p...->mp...', mm, phi)
+    m_phi2 = (1.0 - 1j) * (np.exp(-2j * mp) + np.exp(2j * mp) + 2j) / 4.0
 
     # truncate delta harmonics to spherical harmonic range
     Ylms = delta_Ylms.truncate(LMAX, lmin=LMIN, mmax=MMAX)
@@ -480,20 +497,16 @@ def grace_spatial_error(
     # smooth harmonics and convert to output units
     Ylms = Ylms.convolve(dfactor * wt).power(2.0).scale(1.0 / nsmth)
     # Calculate fourier coefficients
-    d_cos = np.zeros((MMAX + 1, nlat))  # [m,th]
-    d_sin = np.zeros((MMAX + 1, nlat))  # [m,th]
-    # Calculating delta spatial values
-    for k in range(0, nlat):
-        # summation over all spherical harmonic degrees
-        d_cos[:, k] = np.sum(PLM2[:, :, k] * Ylms.clm, axis=0)
-        d_sin[:, k] = np.sum(PLM2[:, :, k] * Ylms.slm, axis=0)
+    # summation over all spherical harmonic degrees
+    pconv2 = np.einsum('lmh...,lm...->mh...', PLM2, Ylms.ilm)
 
-    # Multiplying by c/s(phi#m) to get spatial maps (lon,lat)
-    delta.data = np.sqrt(np.dot(ccos.T, d_cos) + np.dot(ssin.T, d_sin)).T
+    # Multiplying by c/s(phi#m) to get spatial error map
+    # take the square root and drop imaginary component
+    grid.data = np.sqrt(np.einsum('mp...,mh...->hp...', m_phi2, pconv2)).real
 
     # output file format
     file_format = '{0}{1}_L{2:d}{3}{4}{5}_ERR_{6:03d}-{7:03d}.{8}'
-    # output error file to ascii, netCDF4 or HDF5
+    # build output filename
     fargs = (
         FILE_PREFIX,
         units,
@@ -505,8 +518,10 @@ def grace_spatial_error(
         GRACE_Ylms.month[-1],
         suffix[DATAFORM],
     )
-    OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(file_format.format(*fargs))
-    delta.to_file(
+    filename = file_format.format(*fargs)
+    OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(filename)
+    # write spatial data to output file
+    grid.to_file(
         OUTPUT_FILE,
         format=DATAFORM,
         date=False,

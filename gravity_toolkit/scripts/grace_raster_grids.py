@@ -38,9 +38,6 @@ COMMAND LINE OPTIONS:
         CF: Center of Surface Figure (default)
         CM: Center of Mass of Earth System
         CE: Center of Mass of Solid Earth
-    -F X, --format X: input/output data format
-        netCDF4
-        HDF5
     -G X, --gia X: GIA model type to read
         IJ05-R2: Ivins R2 GIA Models
         W12a: Whitehouse GIA Models
@@ -148,6 +145,9 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 08/2026: use default file logger for valid and failed program runs
+        use new structured netCDF4 output function from geoid-toolkit
+        reorder dimensions to be time, y, x for output netCDF4 files
+        include additional attributes to output netCDF4 files for CF compliance
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 03/2024: increase mask buffer to twice the smoothing radius
     Written 08/2023
@@ -237,7 +237,6 @@ def grace_raster_grids(
     SLR_C30=None,
     SLR_C40=None,
     SLR_C50=None,
-    DATAFORM=None,
     MEAN_FILE=None,
     MEANFORM=None,
     REMOVE_FILES=None,
@@ -257,19 +256,21 @@ def grace_raster_grids(
 
     # output attributes for raster files
     attributes = dict(ROOT=collections.OrderedDict())
+    # add attributes for software information
+    attributes['ROOT']['software_reference'] = gravtk.version.project_name
+    attributes['ROOT']['software_version'] = gravtk.version.full_version
+    # add attributes for GRACE/GRACE-FO information
     attributes['ROOT']['generating_institute'] = PROC
     attributes['ROOT']['product_release'] = DREL
     attributes['ROOT']['product_name'] = DSET
     attributes['ROOT']['product_type'] = 'gravity_field'
     attributes['ROOT']['title'] = 'GRACE/GRACE-FO Spatial Data'
-    attributes['ROOT']['reference'] = (
-        f'Output from {pathlib.Path(sys.argv[0]).name}'
-    )
+    # add citation to John's 1998 paper
+    attributes['ROOT']['citation'] = 'https://doi.org/10.1029/98jb02844'
+    reference = f'Output from {pathlib.Path(sys.argv[0]).name}'
+    attributes['ROOT']['reference'] = reference
     # list object of output files for file logs (full path)
     output_files = []
-
-    # file information
-    suffix = dict(netCDF4='nc', HDF5='H5')[DATAFORM]
 
     # read arrays of kl, hl, and ll Love Numbers
     LOVE = gravtk.load_love_numbers(
@@ -327,6 +328,9 @@ def grace_raster_grids(
     # add attributes for input GRACE/GRACE-FO spherical harmonics
     for att_name, att_val in Ylms['attributes'].items():
         attributes['ROOT'][att_name] = att_val
+    # get the start and end dates for the GRACE/GRACE-FO data
+    SD = Ylms.attrs['start_date'].min().astype('datetime64[D]')
+    ED = Ylms.attrs['end_date'].max().astype('datetime64[D]')
 
     # use a mean file for the static field to remove
     if MEAN_FILE:
@@ -435,10 +439,12 @@ def grace_raster_grids(
     crs1 = get_projection(PROJECTION)
     crs2 = pyproj.CRS.from_epsg(4326)
     transformer = pyproj.Transformer.from_crs(crs1, crs2, always_xy=True)
-    # dictionary of coordinate reference system variables
+    # dictionaries of coordinate reference system variables
     crs_to_dict = crs1.to_dict()
+    crs_to_cf = crs1.to_cf()
+    standard_name = crs_to_cf['grid_mapping_name'].title()
     # Climate and Forecast (CF) Metadata Conventions
-    if crs1.to_epsg() == 4326:
+    if crs1.to_epsg() == 4326 or crs1.is_geographic:
         y_cf, x_cf = crs1.cs_to_cf()
     else:
         x_cf, y_cf = crs1.cs_to_cf()
@@ -460,62 +466,84 @@ def grace_raster_grids(
     attributes['ROOT']['earth_density'] = f'{factors.rho_e:0.3f} g/cm^3'
     attributes['ROOT']['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
 
+    # dictionary describing the output netCDF4 structure
+    struct = dict(
+        dimensions=('time', 'y', 'x'),
+        variables={
+            'z': ('time', 'y', 'x'),
+            'crs': (),
+        },
+    )
+
     # projection attributes
     attributes['crs'] = {}
-    # add projection attributes
-    attributes['crs']['standard_name'] = crs1.to_cf()[
-        'grid_mapping_name'
-    ].title()
+    attributes['crs']['standard_name'] = standard_name
     attributes['crs']['spatial_epsg'] = crs1.to_epsg()
     attributes['crs']['spatial_ref'] = crs1.to_wkt()
     attributes['crs']['proj4_params'] = crs1.to_proj4()
-    for att_name, att_val in crs1.to_cf().items():
+    for att_name, att_val in crs_to_cf.items():
         attributes['crs'][att_name] = att_val
-    if 'lat_0' in crs_to_dict.keys() and (crs1.to_epsg() != 4326):
-        attributes['crs']['latitude_of_projection_origin'] = crs_to_dict[
-            'lat_0'
-        ]
-    # x and y
+    if 'lat_0' in crs_to_dict.keys() and not crs1.is_geographic:
+        lat_0 = crs_to_dict.get('lat_0', None)
+        attributes['crs']['latitude_of_projection_origin'] = lat_0
+    # x and y coordinate attributes
     attributes['x'], attributes['y'] = ({}, {})
     for att_name in ['long_name', 'standard_name', 'units']:
         attributes['x'][att_name] = x_cf[att_name]
         attributes['y'][att_name] = y_cf[att_name]
-    # time
+    # time attributes
     attributes['time'] = {}
     attributes['time']['units'] = 'years'
     attributes['time']['long_name'] = 'Date_in_Decimal_Years'
-    # output gridded data
-    fill_value = -9999.0
+    attributes['time']['standard_name'] = 'time'
+    attributes['time']['calendar'] = 'standard'
+    # data attributes
     attributes['z'] = {}
     attributes['z']['units'] = units_name
     attributes['z']['long_name'] = units_longname
+    attributes['z']['short_name'] = units
     attributes['z']['degree_of_truncation'] = LMAX
-    attributes['z']['_FillValue'] = fill_value
-    # set grid mapping attribute
     attributes['z']['grid_mapping'] = 'crs'
+    attributes['z']['coordinates'] = ' '.join(struct['dimensions'])
 
     # output data variables
     output = {}
     # projection variable
-    output['crs'] = np.array((), dtype=np.byte)
+    output['crs'] = np.byte()
     # spacing and bounds of output grid
     dx, dy = np.broadcast_to(np.atleast_1d(SPACING), (2,))
     xmin, xmax, ymin, ymax = np.copy(BOUNDS)
     # create x and y from spacing and bounds
     output['x'] = np.arange(xmin + dx / 2.0, xmax + dx, dx)
-    output['y'] = np.arange(ymin + dx / 2.0, ymax + dy, dy)
+    output['y'] = np.arange(ymin + dy / 2.0, ymax + dy, dy)
     ny, nx = (len(output['y']), len(output['x']))
+    # output time variable
+    output['time'] = np.zeros((nt))
+    # output gridded raster data
+    fill_value = -9999.0
+    output['z'] = np.ma.zeros((nt, ny, nx), fill_value=fill_value)
+    output['z'].mask = np.ones((nt, ny, nx), dtype=bool)
+
+    # create meshgrid of x and y
     gridx, gridy = np.meshgrid(output['x'], output['y'])
     gridlon, gridlat = transformer.transform(gridx, gridy)
-
-    # semimajor axis of ellipsoid [m]
-    a_axis = crs1.ellipsoid.semi_major_metre
     # ellipsoidal flattening
     flat = 1.0 / crs1.ellipsoid.inverse_flattening
     # calculate geocentric latitude and convert to degrees
     latitude_geocentric = geoidtk.spatial.geocentric_latitude(
-        gridlon, gridlat, a_axis=a_axis, flat=flat
+        gridlat, flat=flat
     )
+    # add geospatial attributes
+    attributes['ROOT']['geospatial_lat_min'] = gridlat.min()
+    attributes['ROOT']['geospatial_lat_max'] = gridlat.max()
+    attributes['ROOT']['geospatial_lon_min'] = gridlon.min()
+    attributes['ROOT']['geospatial_lon_max'] = gridlon.max()
+    attributes['ROOT']['geospatial_lat_units'] = 'degrees_north'
+    attributes['ROOT']['geospatial_lon_units'] = 'degrees_east'
+    # add temporal attributes
+    attributes['ROOT']['time_coverage_start'] = np.datetime_as_string(SD)
+    attributes['ROOT']['time_coverage_end'] = np.datetime_as_string(ED)
+    attributes['ROOT']['time_coverage_duration'] = str(ED - SD)
 
     # calculate spatial mask with an extended radius
     THRESHOLD = 0.025
@@ -531,26 +559,22 @@ def grace_raster_grids(
     )
     ii, jj = np.nonzero(mask.reshape(ny, nx) > THRESHOLD)
 
-    # output gridded raster data
-    output['z'] = np.ma.zeros((ny, nx, nt), fill_value=fill_value)
-    output['z'].mask = np.ones((ny, nx, nt), dtype=bool)
-    output['time'] = np.zeros((nt))
-
     # converting harmonics to truncated, smoothed coefficients in units
     # combining harmonics to calculate output raster grids
-    for i, grace_month in enumerate(GRACE_Ylms.month):
+    for t, grace_month in enumerate(GRACE_Ylms.month):
+        # keep track of the current month being processed
         logger.debug(grace_month)
         # GRACE/GRACE-FO harmonics for time t
-        Ylms = GRACE_Ylms.index(i)
+        Ylms = GRACE_Ylms.index(t)
         # Remove GIA rate for time
-        Ylms.subtract(GIA_Ylms.index(i))
+        Ylms.subtract(GIA_Ylms.index(t))
         # Remove monthly files to be removed
-        Ylms.subtract(remove_Ylms.index(i))
+        Ylms.subtract(remove_Ylms.index(t))
         # truncate to degree and order LMAX and MMAX
         # truncate minimum degree to LMIN
         Ylms.truncate(LMAX, lmin=LMIN, mmax=MMAX)
         # convert spherical harmonics to output raster grid
-        output['z'].data[ii, jj, i] = gravtk.clenshaw_summation(
+        output['z'].data[t, ii, jj] = gravtk.clenshaw_summation(
             Ylms.clm,
             Ylms.slm,
             gridlon[ii, jj],
@@ -560,27 +584,25 @@ def grace_raster_grids(
             LMAX=LMAX,
             LOVE=LOVE,
         )
-        output['z'].mask[ii, jj, i] = False
+        output['z'].mask[t, ii, jj] = False
         # copy time variables for month
-        output['time'][i] = np.copy(Ylms.time)
+        output['time'][t] = np.copy(Ylms.time)
     # convert masked values to fill value
     output['z'].data[output['z'].mask] = output['z'].fill_value
 
-    # output raster files to netCDF4 or HDF5
-    FILE = (
+    # output netCDF4 raster files
+    output_file = OUTPUT_DIRECTORY.joinpath(
         f'{FILE_PREFIX}{units}_L{LMAX:d}{order_str}{gw_str}{ds_str}_'
-        f'{START:03d}-{END:03d}.{suffix}'
+        f'{START:03d}-{END:03d}.nc'
     )
-    output_file = OUTPUT_DIRECTORY.joinpath(FILE)
     # use spatial functions from geoid toolkit to write rasters
-    if DATAFORM == 'netCDF4':
-        geoidtk.spatial.to_netCDF4(
-            output, attributes, output_file, data_type='grid'
-        )
-    elif DATAFORM == 'HDF5':
-        geoidtk.spatial.to_HDF5(
-            output, attributes, output_file, data_type='grid'
-        )
+    geoidtk.spatial.to_netCDF4(
+        output,
+        attributes,
+        output_file,
+        data_type='structured',
+        structure=struct,
+    )
     # set the permissions mode of the output files
     output_file.chmod(mode=MODE)
     # add file to list
@@ -907,15 +929,6 @@ def arguments():
         choices=['CSR', 'GSFC', 'LARES'],
         help='Replace C50 coefficients with SLR values',
     )
-    # input data format (netCDF4, HDF5)
-    parser.add_argument(
-        '--format',
-        '-F',
-        type=str,
-        default='netCDF4',
-        choices=['netCDF4', 'HDF5'],
-        help='Input/output data format',
-    )
     # mean file to remove
     parser.add_argument(
         '--mean-file',
@@ -1038,7 +1051,6 @@ def main():
             SLR_C30=args.slr_c30,
             SLR_C40=args.slr_c40,
             SLR_C50=args.slr_c50,
-            DATAFORM=args.format,
             MEAN_FILE=args.mean_file,
             MEANFORM=args.mean_format,
             REMOVE_FILES=args.remove_file,
