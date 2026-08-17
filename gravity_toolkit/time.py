@@ -14,6 +14,7 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 08/2026: output numpy.datetime64 objects from file parsers
+        added astype option to calendar_days function (can now be int)
     Updated 07/2026: added function to convert times to numpy datetimes
     Updated 06/2024: remove timescale class and leap second calculations
     Updated 06/2023: add timescale class for converting between time scales
@@ -369,7 +370,7 @@ def parse_gfc_file(granule, PROC, DSET):
         # extract parameters from input filename
         PFX, PRD, trunc, year, month, SFX = rx.findall(file_basename).pop()
         # number of days in each month for the calendar year
-        dpm = calendar_days(int(year))
+        dpm = calendar_days(int(year), astype=int)
         # create start and end date lists
         start_date = datetime(int(year), int(month), 1, 0, 0, 0)
         end_date = datetime(
@@ -399,7 +400,7 @@ def parse_gfc_file(granule, PROC, DSET):
         # extract parameters from input filename
         PROD, trunc, month, year, SFX = rx.findall(file_basename).pop()
         # number of days in each month for the calendar year
-        dpm = calendar_days(int(year))
+        dpm = calendar_days(int(year), astype=int)
         # create start and end date lists
         start_date = datetime(int(year), int(month), 1, 0, 0, 0)
         end_date = datetime(
@@ -608,7 +609,7 @@ _dpm_stnd = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 
 # PURPOSE: gets the number of days per month for a given year
-def calendar_days(year):
+def calendar_days(year, astype=np.float64):
     """
     Calculates the number of days per month for a given year
 
@@ -616,6 +617,8 @@ def calendar_days(year):
     ----------
     year: np.ndarray
         calendar year
+    astype: obj, default np.float64
+        data type for output array
 
     Returns
     -------
@@ -635,9 +638,9 @@ def calendar_days(year):
     m4000 = year % 4000
     # find indices for standard years and leap years using criteria
     if (m4 == 0) & (m100 != 0) | (m400 == 0) & (m4000 != 0):
-        return np.array(_dpm_leap, dtype=np.float64)
+        return np.array(_dpm_leap, dtype=astype)
     elif (m4 != 0) | (m100 == 0) & (m400 != 0) | (m4000 == 0):
-        return np.array(_dpm_stnd, dtype=np.float64)
+        return np.array(_dpm_stnd, dtype=astype)
 
 
 # PURPOSE: convert a numpy datetime array to delta times since an epoch

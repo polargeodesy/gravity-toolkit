@@ -167,7 +167,7 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         # extract parameters from input filename
         PFX, PRD, trunc, year, month, SFX = rx.findall(input_file.name).pop()
         # number of days in each month for the calendar year
-        dpm = gravity_toolkit.time.calendar_days(int(year))
+        dpm = gravity_toolkit.time.calendar_days(int(year), astype=int)
         # create start and end date lists
         start_date = datetime(int(year), int(month), 1, 0, 0, 0)
         end_date = datetime(
@@ -184,7 +184,7 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         start_date = gravity_toolkit.time.parse(starttime)
         end_date = gravity_toolkit.time.parse(endtime)
         # number of days in each month for the calendar year
-        dpm = gravity_toolkit.time.calendar_days(start_date[0])
+        dpm = gravity_toolkit.time.calendar_days(start_date.year, astype=int)
     elif re.match(swarm_model, input_file.name):
         # compile numerical expression operator for parameters from files
         # Swarm: dealiasing products for Swarm data
@@ -192,7 +192,7 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         # extract parameters from input filename
         PROD, trunc, month, year, SFX = rx.findall(input_file.name).pop()
         # number of days in each month for the calendar year
-        dpm = gravity_toolkit.time.calendar_days(int(year))
+        dpm = gravity_toolkit.time.calendar_days(int(year), astype=int)
         # create start and end date lists
         start_date = datetime(int(year), int(month), 1, 0, 0, 0)
         end_date = datetime(
@@ -226,9 +226,9 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         start_yr,
         start_struct.tm_mon,
         start_struct.tm_mday,
-        hour=end_struct.tm_hour,
-        minute=end_struct.tm_min,
-        second=end_struct.tm_sec,
+        hour=start_struct.tm_hour,
+        minute=start_struct.tm_min,
+        second=start_struct.tm_sec,
         epoch=(1858, 11, 17, 0, 0, 0),
     )
     MJD2 = gravity_toolkit.time.convert_calendar_dates(
