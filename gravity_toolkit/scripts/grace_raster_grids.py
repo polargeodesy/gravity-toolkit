@@ -266,7 +266,7 @@ def grace_raster_grids(
     attributes['ROOT']['product_type'] = 'gravity_field'
     attributes['ROOT']['title'] = 'GRACE/GRACE-FO Spatial Data'
     # add citation to John's 1998 paper
-    attributes['citation'] = 'https://doi.org/10.1029/98jb02844'
+    attributes['ROOT']['citation'] = 'https://doi.org/10.1029/98jb02844'
     reference = f'Output from {pathlib.Path(sys.argv[0]).name}'
     attributes['ROOT']['reference'] = reference
     # list object of output files for file logs (full path)
@@ -515,7 +515,7 @@ def grace_raster_grids(
     xmin, xmax, ymin, ymax = np.copy(BOUNDS)
     # create x and y from spacing and bounds
     output['x'] = np.arange(xmin + dx / 2.0, xmax + dx, dx)
-    output['y'] = np.arange(ymin + dx / 2.0, ymax + dy, dy)
+    output['y'] = np.arange(ymin + dy / 2.0, ymax + dy, dy)
     ny, nx = (len(output['y']), len(output['x']))
     # output time variable
     output['time'] = np.zeros((nt))
