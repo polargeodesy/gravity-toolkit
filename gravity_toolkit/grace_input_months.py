@@ -110,6 +110,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 08/2026: use upstream file logger for verbose output
+        save start and end date of files as numpy datetime64[s] arrays
     Updated 10/2023: standardize ocean model for UCI degree 1 coefficients
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: use release-03 GFZ GravIS SLR and geocenter files
@@ -363,7 +364,7 @@ def grace_input_months(
     n_cons = len(months)
 
     # Initializing input data matrices
-    grace_Ylms = {}
+    grace_Ylms = collections.OrderedDict()
     grace_Ylms['clm'] = np.zeros((LMAX + 1, MMAX + 1, n_cons))
     grace_Ylms['slm'] = np.zeros((LMAX + 1, MMAX + 1, n_cons))
     grace_Ylms['eclm'] = np.zeros((LMAX + 1, MMAX + 1, n_cons))
@@ -373,6 +374,11 @@ def grace_input_months(
     # output dimensions
     grace_Ylms['l'] = np.arange(LMAX + 1)
     grace_Ylms['m'] = np.arange(MMAX + 1)
+    # datetime arrays for start and end dates
+    grace_Ylms.attrs = {
+        'start_date': np.zeros((n_cons), dtype='datetime64[s]'),
+        'end_date': np.zeros((n_cons), dtype='datetime64[s]'),
+    }
 
     # attributes for processing run
     attributes = collections.OrderedDict()
@@ -383,11 +389,14 @@ def grace_input_months(
     grace_files = grace_date(
         base_dir, PROC=PROC, DREL=DREL, DSET=DSET, OUTPUT=False
     )
+    # get the list of GRACE/GRACE-FO months for the input files
+    file_months = list(grace_files.keys())
 
     # importing data from GRACE/GRACE-FO files
     for i, grace_month in enumerate(months):
         # read spherical harmonic data products
         infile = grace_files[grace_month]
+        j = file_months.index(grace_month)
         # log input file if debugging
         logger.debug(f'Reading file {i:d}: {str(infile)}')
         # read GRACE/GRACE-FO/Swarm file
@@ -408,6 +417,9 @@ def grace_input_months(
         # copy date variables
         grace_Ylms['time'][i] = np.copy(Ylms['time'])
         grace_Ylms['month'][i] = np.int64(grace_month)
+        # copy start and end dates from grace_files attributes
+        grace_Ylms.attrs['start_date'][i] = grace_files.attrs['start_date'][j]
+        grace_Ylms.attrs['end_date'][i] = grace_files.attrs['end_date'][j]
         # copy input file basename
         attributes['lineage'][i] = pathlib.Path(infile).stem
 

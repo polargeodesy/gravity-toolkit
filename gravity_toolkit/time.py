@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 time.py
-Written by Tyler Sutterley (07/2026)
+Written by Tyler Sutterley (08/2026)
 Contributions by Hugo Lecomte
 
 Utilities for calculating time operations
@@ -13,6 +13,7 @@ PYTHON DEPENDENCIES:
         https://dateutil.readthedocs.io/en/stable/
 
 UPDATE HISTORY:
+    Updated 08/2026: output numpy.datetime64 objects from file parsers
     Updated 07/2026: added function to convert times to numpy datetimes
     Updated 06/2024: remove timescale class and leap second calculations
     Updated 06/2023: add timescale class for converting between time scales
@@ -46,11 +47,11 @@ import copy
 import logging
 import pathlib
 import warnings
-import datetime
 import traceback
 import numpy as np
 import dateutil.parser
 import gravity_toolkit.utilities
+from datetime import datetime, timedelta
 
 # conversion factors between time units and seconds
 _to_sec = {
@@ -228,7 +229,7 @@ def to_datetime(timedelta: np.ndarray, attributes: str, unit: str = 's'):
     # get the epoch and units from the attributes
     epoch, to_secs = parse_date_string(attributes)
     # convert epoch to datetime variable
-    epoch = np.datetime64(datetime.datetime(*epoch))
+    epoch = np.datetime64(datetime(*epoch))
     # calculate the delta time in seconds
     delta_time = np.atleast_1d(timedelta * to_secs).astype(np.int64)
     # return the datetime array
@@ -266,7 +267,7 @@ def to_string(
     # return the string representations of the datetime objects
     if strftime is not None:
         # convert to datetime objects and use strftime formatting
-        dtime = dtime.astype(datetime.datetime)
+        dtime = dtime.astype(datetime)
         return np.array([d.strftime(strftime) for d in dtime])
     else:
         return np.datetime_as_string(dtime, unit=unit)
@@ -281,9 +282,16 @@ def parse_grace_file(granule):
     ----------
     granule: str
         GRACE/GRACE-FO Level-2 spherical harmonic data file
+
+    Returns
+    -------
+    start_date: datetime
+        start date of GRACE/GRACE-FO data file
+    end_date: datetime
+        end date of GRACE/GRACE-FO data file
     """
     # verify that filename is reduced to basename
-    file_basename = pathlib.Path(granule).name
+    name = pathlib.Path(granule).name
     # compile numerical expression operator for parameters from files
     # UTCSR: The University of Texas at Austin Center for Space Research
     # EIGEN: GFZ German Research Center for Geosciences (RL01-RL05)
@@ -301,11 +309,11 @@ def parse_grace_file(granule):
     )
     rx = re.compile(regex_pattern, re.VERBOSE)
     # extract parameters from input filename
-    PFX, SY, SD, EY, ED, AUX, PRC, F1, DRL, F2, SFX = rx.findall(
-        file_basename
-    ).pop()
-    # return the start and end date lists
-    return ((SY, SD), (EY, ED))
+    PFX, SY, SD, EY, ED, AUX, PRC, F1, DRL, F2, SFX = rx.findall(name).pop()
+    # return the start and end dates
+    start_date = datetime(int(SY), 1, 1) + timedelta(days=int(SD) - 1)
+    end_date = datetime(int(EY), 1, 1) + timedelta(days=int(ED) - 1)
+    return (start_date, end_date)
 
 
 # PURPOSE: extract dates from GRAZ or Swarm files with regular expressions
@@ -330,6 +338,13 @@ def parse_gfc_file(granule, PROC, DSET):
             - ``'GAC'``: combined non-tidal atmospheric and oceanic correction
             - ``'GAD'``: ocean bottom pressure product
             - ``'GSM'``: corrected monthly static gravity field product
+
+    Returns
+    -------
+    start_date: datetime
+        start date of gfc data file
+    end_date: datetime
+        end date of gfc data file
     """
     # verify that filename is reduced to basename
     file_basename = pathlib.Path(granule).name
@@ -356,8 +371,10 @@ def parse_gfc_file(granule, PROC, DSET):
         # number of days in each month for the calendar year
         dpm = calendar_days(int(year))
         # create start and end date lists
-        start_date = [int(year), int(month), 1, 0, 0, 0]
-        end_date = [int(year), int(month), dpm[int(month) - 1], 23, 59, 59]
+        start_date = datetime(int(year), int(month), 1, 0, 0, 0)
+        end_date = datetime(
+            int(year), int(month), dpm[int(month) - 1], 23, 59, 59
+        )
     elif (PROC == 'Swarm') and (DSET == 'GSM'):
         # regular expression operators for Swarm data
         regex_pattern = (
@@ -369,8 +386,8 @@ def parse_gfc_file(granule, PROC, DSET):
         SAT, tmp, PROD, starttime, endtime, RL, SFX = rx.findall(
             file_basename
         ).pop()
-        start_date, _ = parse_date_string(starttime)
-        end_date, _ = parse_date_string(endtime)
+        start_date = parse(starttime)
+        end_date = parse(endtime)
     elif (PROC == 'Swarm') and (DSET != 'GSM'):
         # regular expression operators for Swarm models
         regex_pattern = (
@@ -384,8 +401,10 @@ def parse_gfc_file(granule, PROC, DSET):
         # number of days in each month for the calendar year
         dpm = calendar_days(int(year))
         # create start and end date lists
-        start_date = [int(year), int(month), 1, 0, 0, 0]
-        end_date = [int(year), int(month), dpm[int(month) - 1], 23, 59, 59]
+        start_date = datetime(int(year), int(month), 1, 0, 0, 0)
+        end_date = datetime(
+            int(year), int(month), dpm[int(month) - 1], 23, 59, 59
+        )
     # return the start and end date lists
     return (start_date, end_date)
 
@@ -640,7 +659,7 @@ def convert_datetime(date, epoch=_unix_epoch):
     """
     # convert epoch to datetime variables
     if isinstance(epoch, (tuple, list)):
-        epoch = np.datetime64(datetime.datetime(*epoch))
+        epoch = np.datetime64(datetime(*epoch))
     elif isinstance(epoch, str):
         epoch = np.datetime64(parse(epoch))
     # convert to delta time
@@ -665,11 +684,11 @@ def convert_delta_time(delta_time, epoch1=None, epoch2=None, scale=1.0):
     """
     # convert epochs to datetime variables
     if isinstance(epoch1, (tuple, list)):
-        epoch1 = np.datetime64(datetime.datetime(*epoch1))
+        epoch1 = np.datetime64(datetime(*epoch1))
     elif isinstance(epoch1, str):
         epoch1 = np.datetime64(parse(epoch1))
     if isinstance(epoch2, (tuple, list)):
-        epoch2 = np.datetime64(datetime.datetime(*epoch2))
+        epoch2 = np.datetime64(datetime(*epoch2))
     elif isinstance(epoch2, str):
         epoch2 = np.datetime64(parse(epoch2))
     # calculate the total difference in time in seconds
@@ -734,9 +753,9 @@ def convert_calendar_dates(
         - 2400000.5
     )
     # convert epochs to datetime variables
-    epoch1 = np.datetime64(datetime.datetime(*_mjd_epoch))
+    epoch1 = np.datetime64(datetime(*_mjd_epoch))
     if isinstance(epoch, (tuple, list)):
-        epoch = np.datetime64(datetime.datetime(*epoch))
+        epoch = np.datetime64(datetime(*epoch))
     elif isinstance(epoch, str):
         epoch = np.datetime64(parse(epoch))
     # calculate the total difference in time in days

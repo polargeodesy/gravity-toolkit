@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 read_gfc_harmonics.py
-Written by Tyler Sutterley (06/2023)
+Written by Tyler Sutterley (08/2026)
 Contributions by Hugo Lecomte
 
 Reads gfc files and extracts spherical harmonics for Swarm and
@@ -55,6 +55,7 @@ PROGRAM DEPENDENCIES:
     calculate_tidal_offset.py: calculates the C20 offset for a tidal system
 
 UPDATE HISTORY:
+    Updated 08/2026: rename output dictionary to gfc for consistency
     Updated 06/2024: use wrapper to importlib for optional dependencies
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: improve typing for variables in docstrings
@@ -74,6 +75,7 @@ import pathlib
 import numpy as np
 import gravity_toolkit.time
 from gravity_toolkit.utilities import import_dependency
+from datetime import datetime
 
 # attempt imports
 geoidtk = import_dependency('geoid_toolkit')
@@ -167,8 +169,10 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         # number of days in each month for the calendar year
         dpm = gravity_toolkit.time.calendar_days(int(year))
         # create start and end date lists
-        start_date = [int(year), int(month), 1, 0, 0, 0]
-        end_date = [int(year), int(month), dpm[int(month) - 1], 23, 59, 59]
+        start_date = datetime(int(year), int(month), 1, 0, 0, 0)
+        end_date = datetime(
+            int(year), int(month), dpm[int(month) - 1], 23, 59, 59
+        )
     elif re.match(swarm_data, input_file.name):
         # compile numerical expression operator for parameters from files
         # Swarm: data from Swarm satellite
@@ -177,8 +181,8 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         SAT, tmp, PROD, starttime, endtime, RL, SFX = rx.findall(
             input_file.name
         ).pop()
-        start_date, _ = gravity_toolkit.time.parse_date_string(starttime)
-        end_date, _ = gravity_toolkit.time.parse_date_string(endtime)
+        start_date = gravity_toolkit.time.parse(starttime)
+        end_date = gravity_toolkit.time.parse(endtime)
         # number of days in each month for the calendar year
         dpm = gravity_toolkit.time.calendar_days(start_date[0])
     elif re.match(swarm_model, input_file.name):
@@ -190,61 +194,54 @@ def read_gfc_harmonics(input_file, TIDE=None, FLAG='gfc'):
         # number of days in each month for the calendar year
         dpm = gravity_toolkit.time.calendar_days(int(year))
         # create start and end date lists
-        start_date = [int(year), int(month), 1, 0, 0, 0]
-        end_date = [int(year), int(month), dpm[int(month) - 1], 23, 59, 59]
+        start_date = datetime(int(year), int(month), 1, 0, 0, 0)
+        end_date = datetime(
+            int(year), int(month), dpm[int(month) - 1], 23, 59, 59
+        )
 
     # python dictionary with model input and headers
     ZIP = bool(re.search('ZIP', SFX, re.IGNORECASE))
-    model_input = geoidtk.read_ICGEM_harmonics(
+    # read gravity field coefficients (gfc)
+    gfc = geoidtk.read_ICGEM_harmonics(
         input_file, TIDE=TIDE, FLAG=FLAG, ZIP=ZIP
     )
 
     # start and end day of the year
-    start_day = (
-        np.sum(dpm[: start_date[1] - 1])
-        + start_date[2]
-        + start_date[3] / 24.0
-        + start_date[4] / 1440.0
-        + start_date[5] / 86400.0
-    )
-    end_day = (
-        np.sum(dpm[: end_date[1] - 1])
-        + end_date[2]
-        + end_date[3] / 24.0
-        + end_date[4] / 1440.0
-        + end_date[5] / 86400.0
-    )
+    start_struct = start_date.timetuple()
+    start_yr = start_struct.tm_year
+    start_day = start_struct.tm_yday
+    end_struct = end_date.timetuple()
+    end_yr = end_struct.tm_year
+    end_day = end_struct.tm_yday
+
     # end date taking into account measurements taken on different years
-    end_cyclic = (end_date[0] - start_date[0]) * np.sum(dpm) + end_day
+    end_cyclic = (end_yr - start_yr) * np.sum(dpm) + end_day
     # calculate mid-month value
     mid_day = np.mean([start_day, end_cyclic])
     # Calculating the mid-month date in decimal form
-    model_input['time'] = start_date[0] + mid_day / np.sum(dpm)
+    gfc['time'] = start_yr + mid_day / np.sum(dpm)
+
     # Calculating the Julian dates of the start and end date
-    model_input['start'] = (
-        2400000.5
-        + gravity_toolkit.time.convert_calendar_dates(
-            start_date[0],
-            start_date[1],
-            start_date[2],
-            hour=start_date[3],
-            minute=start_date[4],
-            second=start_date[5],
-            epoch=(1858, 11, 17, 0, 0, 0),
-        )
+    MJD1 = gravity_toolkit.time.convert_calendar_dates(
+        start_yr,
+        start_struct.tm_mon,
+        start_struct.tm_mday,
+        hour=end_struct.tm_hour,
+        minute=end_struct.tm_min,
+        second=end_struct.tm_sec,
+        epoch=(1858, 11, 17, 0, 0, 0),
     )
-    model_input['end'] = (
-        2400000.5
-        + gravity_toolkit.time.convert_calendar_dates(
-            end_date[0],
-            end_date[1],
-            end_date[2],
-            hour=end_date[3],
-            minute=end_date[4],
-            second=end_date[5],
-            epoch=(1858, 11, 17, 0, 0, 0),
-        )
+    MJD2 = gravity_toolkit.time.convert_calendar_dates(
+        end_yr,
+        end_struct.tm_mon,
+        end_struct.tm_mday,
+        hour=end_struct.tm_hour,
+        minute=end_struct.tm_min,
+        second=end_struct.tm_sec,
+        epoch=(1858, 11, 17, 0, 0, 0),
     )
+    gfc['start'] = 2400000.5 + MJD1
+    gfc['end'] = 2400000.5 + MJD2
 
     # return the spherical harmonics and parameters
-    return model_input
+    return gfc

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 read_GRACE_harmonics.py
-Written by Tyler Sutterley (11/2024)
+Written by Tyler Sutterley (08/2026)
 Contributions by Hugo Lecomte
 
 Reads GRACE files and extracts spherical harmonic data and drift rates (RL04)
@@ -42,6 +42,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 08/2026: use python datetime to calculate start and end dates
     Updated 11/2024: check if the GRACE/GRACE-FO files are gfc format
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: added regex formatting for CNES GRGS harmonics
@@ -75,6 +76,7 @@ import yaml
 import pathlib
 import numpy as np
 import gravity_toolkit.time
+from datetime import datetime, timedelta
 
 
 # PURPOSE: read Level-2 GRACE and GRACE-FO spherical harmonic files
@@ -153,12 +155,19 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
         FLAG = r'GRCOF2'
 
     # output python dictionary with GRACE/GRACE-FO data and metadata
-    grace_L2_input = {}
+    # spherical harmonic model (SHM) data
+    SHM = {}
+
     # extract GRACE/GRACE-FO date information from input file name
-    start_yr = np.float64(SY)
-    end_yr = np.float64(EY)
-    start_day = np.float64(SD)
-    end_day = np.float64(ED)
+    start_date = datetime(int(SY), 1, 1) + timedelta(days=int(SD) - 1)
+    start_struct = start_date.timetuple()
+    end_date = datetime(int(EY), 1, 1) + timedelta(days=int(ED) - 1)
+    end_struct = end_date.timetuple()
+    # start and end day of the year
+    start_yr = start_struct.tm_year
+    start_day = start_struct.tm_yday
+    end_yr = end_struct.tm_year
+    end_day = end_struct.tm_yday
     # calculate mid-month date taking into account if measurements are
     # on different years
     dpy = gravity_toolkit.time.calendar_days(start_yr).sum()
@@ -168,40 +177,44 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
     # Calculate mid-month value
     mid_day = np.mean([start_day, end_cyclic])
     # Calculating the mid-month date in decimal form
-    grace_L2_input['time'] = start_yr + mid_day / dpy
+    SHM['time'] = start_yr + mid_day / dpy
+
     # Calculating the Julian dates of the start and end date
-    grace_L2_input['start'] = (
-        2400000.5
-        + gravity_toolkit.time.convert_calendar_dates(
-            start_yr, 1.0, start_day, epoch=(1858, 11, 17, 0, 0, 0)
-        )
+    MJD1 = gravity_toolkit.time.convert_calendar_dates(
+        start_yr,
+        start_struct.tm_mon,
+        start_struct.tm_mday,
+        epoch=(1858, 11, 17, 0, 0, 0),
     )
-    grace_L2_input['end'] = (
-        2400000.5
-        + gravity_toolkit.time.convert_calendar_dates(
-            end_yr, 1.0, end_day, epoch=(1858, 11, 17, 0, 0, 0)
-        )
+    MJD2 = gravity_toolkit.time.convert_calendar_dates(
+        end_yr,
+        end_struct.tm_mon,
+        end_struct.tm_mday,
+        epoch=(1858, 11, 17, 0, 0, 0),
     )
+    SHM['start'] = 2400000.5 + MJD1
+    SHM['end'] = 2400000.5 + MJD2
 
     # set maximum spherical harmonic order
-    MMAX = (
-        np.copy(LMAX) if (kwargs['MMAX'] is None) else np.copy(kwargs['MMAX'])
-    )
+    MMAX = kwargs.get('MMAX', None)
+    # only replace if None (allow MMAX to be zero, which is typically falsy)
+    if MMAX is None:
+        MMAX = np.copy(LMAX)
     # output dimensions
-    grace_L2_input['l'] = np.arange(LMAX + 1)
-    grace_L2_input['m'] = np.arange(MMAX + 1)
+    SHM['l'] = np.arange(LMAX + 1)
+    SHM['m'] = np.arange(MMAX + 1)
     # Spherical harmonic coefficient matrices to be filled from data file
-    grace_L2_input['clm'] = np.zeros((LMAX + 1, MMAX + 1))
-    grace_L2_input['slm'] = np.zeros((LMAX + 1, MMAX + 1))
+    SHM['clm'] = np.zeros((LMAX + 1, MMAX + 1))
+    SHM['slm'] = np.zeros((LMAX + 1, MMAX + 1))
     # spherical harmonic uncalibrated standard deviations
-    grace_L2_input['eclm'] = np.zeros((LMAX + 1, MMAX + 1))
-    grace_L2_input['eslm'] = np.zeros((LMAX + 1, MMAX + 1))
+    SHM['eclm'] = np.zeros((LMAX + 1, MMAX + 1))
+    SHM['eslm'] = np.zeros((LMAX + 1, MMAX + 1))
     if (DREL == 4) and (DSET == 'GSM'):
         # clm and slm drift rates for RL04
         drift_c = np.zeros((LMAX + 1, MMAX + 1))
         drift_s = np.zeros((LMAX + 1, MMAX + 1))
     # set default degree 0 harmonics for intercomparability between centers
-    grace_L2_input['clm'][0, 0] = 1.0
+    SHM['clm'][0, 0] = 1.0
 
     # extract GRACE and GRACE-FO file headers
     # replace colons in header if within quotations
@@ -223,15 +236,13 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
         ]
         header_regex = re.compile(r'(' + r'|'.join(header_parameters) + r')')
         header = [l.split(maxsplit=1) for l in head if header_regex.match(l)]
-        grace_L2_input['header'] = {i[0]: i[1] for i in header}
+        SHM['header'] = {i[0]: i[1] for i in header}
     elif ((N == 'GRAC') and (DREL >= 6)) or (N == 'GRFO'):
         # parse the YAML header for RL06 or GRACE-FO (specifying yaml loader)
-        grace_L2_input.update(
-            yaml.load('\n'.join(head), Loader=yaml.BaseLoader)
-        )
+        SHM.update(yaml.load('\n'.join(head), Loader=yaml.BaseLoader))
     else:
         # save lines of the GRACE file header removing empty lines
-        grace_L2_input['header'] = [l.rstrip() for l in head if l]
+        SHM['header'] = [l.rstrip() for l in head if l]
 
     # for each line in the GRACE/GRACE-FO file
     for line in file_contents:
@@ -244,10 +255,10 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
             m1 = np.int64(line_contents[2])
             # if degree and order are below the truncation limits
             if (l1 <= LMAX) and (m1 <= MMAX):
-                grace_L2_input['clm'][l1, m1] = np.float64(line_contents[3])
-                grace_L2_input['slm'][l1, m1] = np.float64(line_contents[4])
-                grace_L2_input['eclm'][l1, m1] = np.float64(line_contents[5])
-                grace_L2_input['eslm'][l1, m1] = np.float64(line_contents[6])
+                SHM['clm'][l1, m1] = np.float64(line_contents[3])
+                SHM['slm'][l1, m1] = np.float64(line_contents[4])
+                SHM['eclm'][l1, m1] = np.float64(line_contents[5])
+                SHM['eslm'][l1, m1] = np.float64(line_contents[6])
         # find if line starts with drift rate flag
         elif bool(re.match(r'GRDOTA', line)):
             # split the line into individual components
@@ -264,21 +275,21 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
     # Currently removes 2003.3 to get the temporal average close to 0.
     if (DREL == 4) and (DSET == 'GSM'):
         # time since 2003.3
-        dt = grace_L2_input['time'] - 2003.3
-        grace_L2_input['clm'][:, :] += dt * drift_c[:, :]
-        grace_L2_input['slm'][:, :] += dt * drift_s[:, :]
+        dt = SHM['time'] - 2003.3
+        SHM['clm'][:, :] += dt * drift_c[:, :]
+        SHM['slm'][:, :] += dt * drift_s[:, :]
 
     # Correct Pole Tide following Wahr et al. (2015) 10.1002/2015JB011986
     if kwargs['POLE_TIDE'] and (DSET == 'GSM'):
         # time since 2000.0
-        dt = grace_L2_input['time'] - 2000.0
+        dt = SHM['time'] - 2000.0
         # CSR and JPL Pole Tide Correction
         if PRC in ('UTCSR', 'JPLEM', 'JPLMSC'):
             # values for IERS mean pole [2010]
-            if grace_L2_input['time'] < 2010.0:
+            if SHM['time'] < 2010.0:
                 a = np.array([0.055974, 1.8243e-3, 1.8413e-4, 7.024e-6])
                 b = np.array([-0.346346, -1.7896e-3, 1.0729e-4, 0.908e-6])
-            elif grace_L2_input['time'] >= 2010.0:
+            elif SHM['time'] >= 2010.0:
                 a = np.array([0.023513, 7.6141e-3, 0.0, 0.0])
                 b = np.array([-0.358891, 0.6287e-3, 0.0, 0.0])
             # calculate m1 and m2 values
@@ -297,8 +308,8 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
                 m2 + 3.48e-3 * dt
             )
             # correct GRACE/GRACE-FO spherical harmonics for pole tide
-            grace_L2_input['clm'][2, 1] -= C21_PT
-            grace_L2_input['slm'][2, 1] -= S21_PT
+            SHM['clm'][2, 1] -= C21_PT
+            SHM['slm'][2, 1] -= S21_PT
         # GFZ Pole Tide Correction
         elif PRC in ('EIGEN', 'GFZOP'):
             # pole tide values for GFZ
@@ -306,13 +317,13 @@ def read_GRACE_harmonics(input_file, LMAX, **kwargs):
             C21_PT = -1.551e-9 * (-0.62e-3 * dt) - 0.012e-9 * (3.48e-3 * dt)
             S21_PT = 0.021e-9 * (-0.62e-3 * dt) - 1.505e-9 * (3.48e-3 * dt)
             # correct GRACE/GRACE-FO spherical harmonics for pole tide
-            grace_L2_input['clm'][2, 1] -= C21_PT
-            grace_L2_input['slm'][2, 1] -= S21_PT
+            SHM['clm'][2, 1] -= C21_PT
+            SHM['slm'][2, 1] -= S21_PT
 
     # return the header data, GRACE/GRACE-FO data
     # GRACE/GRACE-FO date (mid-month in decimal)
     # and the start and end days as Julian dates
-    return grace_L2_input
+    return SHM
 
 
 # PURPOSE: extract parameters from filename

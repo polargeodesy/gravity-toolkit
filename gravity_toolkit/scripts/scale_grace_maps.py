@@ -156,6 +156,8 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 08/2026: use default file logger for valid and failed program runs
+        use np.einsum and Euler's formula for spherical harmonic summations
+        include additional attributes to output files for CF compliance
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: use new scaling_factors inheritance of spatial class
         single input file with scaling factor variables
@@ -193,8 +195,9 @@ import time
 import logging
 import pathlib
 import argparse
-import numpy as np
 import traceback
+import collections
+import numpy as np
 import gravity_toolkit as gravtk
 
 
@@ -261,6 +264,14 @@ def scale_grace_maps(
     if not OUTPUT_DIRECTORY.exists():
         OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
 
+    # output attributes for spatial files
+    attributes = collections.OrderedDict()
+    attributes['generating_institute'] = PROC
+    attributes['product_release'] = DREL
+    attributes['product_name'] = DSET
+    attributes['product_type'] = 'gravity_field'
+    # add citation to Felix and Sean's 2012 paper
+    attributes['citation'] = 'https://doi.org/10.1029/2011WR011453'
     # list object of output files for file logs (full path)
     output_files = []
 
@@ -273,15 +284,33 @@ def scale_grace_maps(
     LOVE = gravtk.load_love_numbers(
         LMAX, LOVE_NUMBERS=LOVE_NUMBERS, REFERENCE=REFERENCE, FORMAT='class'
     )
+    # add attributes for earth model and love numbers
+    attributes['earth_model'] = LOVE.model
+    attributes['earth_love_numbers'] = LOVE.citation
+    attributes['reference_frame'] = LOVE.reference
 
     # atmospheric ECMWF "jump" flag (if ATM)
     atm_str = '_wATM' if ATM else ''
     # output string for both LMAX==MMAX and LMAX != MMAX cases
     MMAX = np.copy(LMAX) if not MMAX else MMAX
     order_str = f'M{MMAX:d}' if (MMAX != LMAX) else ''
+    # add attributes for LMAX and MMAX
+    attributes['max_degree'] = LMAX
+    attributes['max_order'] = MMAX
+
     # output spatial units
     units = 'cmwe'
+    # dfactor is the degree dependent coefficients
+    # for converting to centimeters water equivalent (cmwe)
+    factors = gravtk.units(lmax=LMAX).harmonic(*LOVE)
+    dfactor = factors.get(units)
+    # units attributes
     units_name, units_longname = gravtk.units.get_attributes(units)
+    # add attributes for earth parameters
+    attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
+    attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm^3'
+    attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
+
     # invalid value
     fill_value = -9999.0
 
@@ -357,6 +386,13 @@ def scale_grace_maps(
     )
     # create harmonics object from GRACE/GRACE-FO data
     GRACE_Ylms = gravtk.harmonics().from_dict(Ylms)
+    # add attributes for input GRACE/GRACE-FO spherical harmonics
+    for att_name, att_val in Ylms['attributes'].items():
+        attributes[att_name] = att_val
+    # get the start and end dates for the GRACE/GRACE-FO data
+    SD = Ylms.attrs['start_date'].min().astype('datetime64[D]')
+    ED = Ylms.attrs['end_date'].max().astype('datetime64[D]')
+
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -527,17 +563,29 @@ def scale_grace_maps(
     grid.data = np.zeros((nlat, nlon, nfiles))
     grid.mask = np.zeros((nlat, nlon, nfiles), dtype=bool)
 
+    # add geospatial attributes
+    attributes['geospatial_lat_min'] = grid.lat.min()
+    attributes['geospatial_lat_max'] = grid.lat.max()
+    attributes['geospatial_lon_min'] = grid.lon.min()
+    attributes['geospatial_lon_max'] = grid.lon.max()
+    attributes['geospatial_lat_units'] = 'degrees_north'
+    attributes['geospatial_lon_units'] = 'degrees_east'
+    # add temporal attributes
+    attributes['time_coverage_start'] = np.datetime_as_string(SD)
+    attributes['time_coverage_end'] = np.datetime_as_string(ED)
+    attributes['time_coverage_duration'] = str(ED - SD)
+    # add attributes to output spatial object
+    attributes['title'] = 'GRACE/GRACE-FO Scaled Spatial Data'
+    attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
+    grid.attributes['ROOT'] = attributes
+
     # Computing plms for converting to spatial domain
-    phi = np.radians(grid.lon[np.newaxis, :])
+    phi = np.radians(grid.lon)
     theta = np.radians(90.0 - grid.lat)
     PLM, dPLM = gravtk.plm_holmes(LMAX, np.cos(theta))
     # square of legendre polynomials truncated to order MMAX
     mm = np.arange(0, MMAX + 1)
     PLM2 = PLM[:, mm, :] ** 2
-
-    # dfactor is the degree dependent coefficients
-    # for converting to centimeters water equivalent (cmwe)
-    dfactor = gravtk.units(lmax=LMAX).harmonic(*LOVE).cmwe
 
     # converting harmonics to truncated, smoothed coefficients in units
     # combining harmonics to calculate output spatial fields
@@ -581,22 +629,30 @@ def scale_grace_maps(
         grid.month[-1],
         suffix[DATAFORM],
     )
-    FILE = OUTPUT_DIRECTORY.joinpath(file_format.format(*fargs))
-    # attributes for output files
-    attributes = {}
-    attributes['units'] = copy.copy(units_name)
-    attributes['longname'] = copy.copy(units_longname)
-    attributes['title'] = 'GRACE/GRACE-FO Spatial Data'
-    attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
+    filename = file_format.format(*fargs)
+    FILE = OUTPUT_DIRECTORY.joinpath(filename)
+    # write to output file
     if DATAFORM == 'ascii':
         # ascii (.txt)
         grid.to_ascii(FILE, date=True, verbose=VERBOSE)
     elif DATAFORM == 'netCDF4':
         # netCDF4
-        grid.to_netCDF4(FILE, date=True, verbose=VERBOSE, **attributes)
+        grid.to_netCDF4(
+            FILE,
+            date=True,
+            units=units_name,
+            longname=units_longname,
+            verbose=VERBOSE,
+        )
     elif DATAFORM == 'HDF5':
         # HDF5
-        grid.to_HDF5(FILE, date=True, verbose=VERBOSE, **attributes)
+        grid.to_HDF5(
+            FILE,
+            date=True,
+            units=units_name,
+            longname=units_longname,
+            verbose=VERBOSE,
+        )
     # set the permissions mode of the output files
     FILE.chmod(mode=MODE)
     # add file to list
@@ -613,6 +669,9 @@ def scale_grace_maps(
     error.data = kfactor.error * ratio
     error.mask = np.copy(kfactor.mask)
     error.update_mask()
+    # add attributes to output error object
+    attributes['title'] = 'GRACE/GRACE-FO Scaling Error'
+    error.attributes['ROOT'] = attributes
 
     # output monthly error files to ascii, netCDF4 or HDF5
     fargs = (
@@ -627,18 +686,30 @@ def scale_grace_maps(
         grid.month[-1],
         suffix[DATAFORM],
     )
-    FILE = OUTPUT_DIRECTORY.joinpath(file_format.format(*fargs))
-    # attributes for output files
-    attributes['title'] = 'GRACE/GRACE-FO Scaling Error'
+    filename = file_format.format(*fargs)
+    FILE = OUTPUT_DIRECTORY.joinpath(filename)
+    # write to output file
     if DATAFORM == 'ascii':
         # ascii (.txt)
         error.to_ascii(FILE, date=False, verbose=VERBOSE)
     elif DATAFORM == 'netCDF4':
         # netCDF4
-        error.to_netCDF4(FILE, date=False, verbose=VERBOSE, **attributes)
+        error.to_netCDF4(
+            FILE,
+            date=False,
+            units=units_name,
+            longname=units_longname,
+            verbose=VERBOSE,
+        )
     elif DATAFORM == 'HDF5':
         # HDF5
-        error.to_HDF5(FILE, date=False, verbose=VERBOSE, **attributes)
+        error.to_HDF5(
+            FILE,
+            date=False,
+            units=units_name,
+            longname=units_longname,
+            verbose=VERBOSE,
+        )
     # set the permissions mode of the output files
     FILE.chmod(mode=MODE)
     # add file to list
@@ -652,11 +723,11 @@ def scale_grace_maps(
     delta.month = np.copy(nsmth)
     delta.data = np.zeros((nlat, nlon))
     delta.mask = np.zeros((nlat, nlon), dtype=bool)
+
     # calculate scaled spatial error
     # Calculating cos(m*phi)^2 and sin(m*phi)^2
-    m = delta_Ylms.m[:, np.newaxis]
-    ccos = np.cos(np.dot(m, phi)) ** 2
-    ssin = np.sin(np.dot(m, phi)) ** 2
+    mp = np.einsum('m...,p...->mp...', mm, phi)
+    m_phi2 = (1.0 - 1j) * (np.exp(-2j * mp) + np.exp(2j * mp) + 2j) / 4.0
 
     # truncate delta harmonics to spherical harmonic range
     Ylms = delta_Ylms.truncate(LMAX, lmin=LMIN, mmax=MMAX)
@@ -664,19 +735,19 @@ def scale_grace_maps(
     # smooth harmonics and convert to output units
     Ylms = Ylms.convolve(dfactor * wt).power(2.0).scale(1.0 / nsmth)
     # Calculate fourier coefficients
-    d_cos = np.zeros((MMAX + 1, nlat))  # [m,th]
-    d_sin = np.zeros((MMAX + 1, nlat))  # [m,th]
-    # Calculating delta spatial values
-    for k in range(0, nlat):
-        # summation over all spherical harmonic degrees
-        d_cos[:, k] = np.sum(PLM2[:, :, k] * Ylms.clm, axis=0)
-        d_sin[:, k] = np.sum(PLM2[:, :, k] * Ylms.slm, axis=0)
+    # summation over all spherical harmonic degrees
+    pconv2 = np.einsum('lmh...,lm...->mh...', PLM2, Ylms.ilm)
+
     # Multiplying by c/s(phi#m) to get spatial error map
-    delta.data[:] = np.sqrt(np.dot(ccos.T, d_cos) + np.dot(ssin.T, d_sin)).T
+    # take the square root and drop imaginary component
+    delta.data = np.sqrt(np.einsum('mp...,mh...->hp...', m_phi2, pconv2)).real
 
     # scale output harmonic errors with kfactor
     delta = delta.scale(kfactor.data)
     delta.replace_invalid(fill_value, mask=kfactor.mask)
+    # add attributes to output error object
+    attributes['title'] = 'GRACE/GRACE-FO Scaled Spatial Error'
+    delta.attributes['ROOT'] = attributes
 
     # output monthly files to ascii, netCDF4 or HDF5
     fargs = (
@@ -691,18 +762,30 @@ def scale_grace_maps(
         grid.month[-1],
         suffix[DATAFORM],
     )
-    FILE = OUTPUT_DIRECTORY.joinpath(file_format.format(*fargs))
+    filename = file_format.format(*fargs)
+    FILE = OUTPUT_DIRECTORY.joinpath(filename)
     # attributes for output files
-    attributes['title'] = 'GRACE/GRACE-FO Spatial Error'
     if DATAFORM == 'ascii':
         # ascii (.txt)
         delta.to_ascii(FILE, date=True, verbose=VERBOSE)
     elif DATAFORM == 'netCDF4':
         # netCDF4
-        delta.to_netCDF4(FILE, date=True, verbose=VERBOSE, **attributes)
+        delta.to_netCDF4(
+            FILE,
+            date=True,
+            units=units_name,
+            longname=units_longname,
+            verbose=VERBOSE,
+        )
     elif DATAFORM == 'HDF5':
         # HDF5
-        delta.to_HDF5(FILE, date=True, verbose=VERBOSE, **attributes)
+        delta.to_HDF5(
+            FILE,
+            date=True,
+            units=units_name,
+            longname=units_longname,
+            verbose=VERBOSE,
+        )
     # set the permissions mode of the output files
     FILE.chmod(mode=MODE)
     # add file to list
