@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 plot_global_grid_maps.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2026)
 Creates GMT-like plots in a Plate Carree (Equirectangular) projection
 
 PYTHON DEPENDENCIES:
@@ -23,6 +23,7 @@ PYTHON DEPENDENCIES:
         https://github.com/GeospatialPython/pyshp
 
 UPDATE HISTORY:
+    Updated 08/2026: use upstream file logger for verbose output
     Updated 05/2023: use pathlib to define and operate on paths
         added option to set the input variable names or column order
     Updated 03/2023: switch from parameter files to argparse arguments
@@ -96,16 +97,20 @@ except (NameError, ValueError) as exc:
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(pathlib.Path(sys.argv[0]).name)
-    logging.info(args)
-    logging.info(f'module name: {__name__}')
+    # get logger
+    logger = logging.getLogger(__name__)
+    logger.info(pathlib.Path(sys.argv[0]).name)
+    logger.info(args)
+    logger.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info(f'parent process: {os.getppid():d}')
-    logging.info(f'process id: {os.getpid():d}')
+        logger.info(f'parent process: {os.getppid():d}')
+    logger.info(f'process id: {os.getpid():d}')
 
 
 # PURPOSE plot coastlines and islands (GSHHS with G250 Greenland)
 def plot_coastline(ax, base_dir, LINEWIDTH=0.5):
+    # get logger
+    logger = logging.getLogger(__name__)
     # read the coastline shape file
     coastline_dir = base_dir.joinpath('masks', 'G250')
     coastline_shape_files = []
@@ -113,7 +118,7 @@ def plot_coastline(ax, base_dir, LINEWIDTH=0.5):
     coastline_shape_files.append('greenland_coastline_islands.shp')
     for fi, S in zip(coastline_shape_files, [1000, 200]):
         coast_shapefile = coastline_dir.joinpath(fi)
-        logging.debug(str(coast_shapefile))
+        logger.debug(str(coast_shapefile))
         shape_input = shapefile.Reader(str(coast_shapefile))
         shape_entities = shape_input.shapes()
         # for each entity within the shapefile
@@ -125,13 +130,16 @@ def plot_coastline(ax, base_dir, LINEWIDTH=0.5):
 
 # PURPOSE: plot Antarctic grounded ice delineation
 def plot_grounded_ice(ax, base_dir, LINEWIDTH=0.5):
+    # get logger
+    logger = logging.getLogger(__name__)
+    # path to shapefile for grounded ice delineation
     grounded_ice_file = [
         'masks',
         'IceBoundaries_Antarctica_v02',
         'ant_ice_sheet_islands_v2.shp',
     ]
     grounded_ice_shapefile = base_dir.joinpath(*grounded_ice_file)
-    logging.debug(str(grounded_ice_shapefile))
+    logger.debug(str(grounded_ice_shapefile))
     shape_input = shapefile.Reader(str(grounded_ice_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
@@ -180,6 +188,8 @@ def plot_grid(
     FIGURE_DPI=None,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # read CPT or use color map
     if CPT_FILE is not None:
         # cpt file
@@ -514,7 +524,7 @@ def plot_grid(
     # create output directory if non-existent
     FIGURE_FILE.parent.mkdir(mode=MODE, parents=True, exist_ok=True)
     # save to file
-    logging.info(str(FIGURE_FILE))
+    logger.info(str(FIGURE_FILE))
     plt.savefig(
         FIGURE_FILE,
         metadata={'Title': pathlib.Path(sys.argv[0]).name},
@@ -761,7 +771,9 @@ def main():
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # try to run the analysis with listed parameters
     try:
@@ -803,8 +815,8 @@ def main():
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
-        logging.critical(f'process id {os.getpid():d} failed')
-        logging.error(traceback.format_exc())
+        logger.critical(f'process id {os.getpid():d} failed')
+        logger.error(traceback.format_exc())
 
 
 # run main program
