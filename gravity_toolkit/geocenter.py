@@ -1262,6 +1262,7 @@ class geocenter(object):
             self.C10 -= temp.C10
             self.C11 -= temp.C11
             self.S11 -= temp.S11
+        if apply and np.any(self.X) and np.any(self.Y) and np.any(self.Z):
             # remove the mean geocenter motion
             self.X -= temp.X
             self.Y -= temp.Y
