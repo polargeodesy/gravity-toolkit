@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 harmonic_summation.py
-Written by Tyler Sutterley (07/2026)
+Written by Tyler Sutterley (08/2026)
 
 Returns the spatial field for a series of spherical harmonics
 
@@ -30,6 +30,7 @@ PROGRAM DEPENDENCIES:
     units.py: class for converting spherical harmonic data to specific units
 
 UPDATE HISTORY:
+    Updated 08/2026: change assertions to value errors
     Updated 07/2026: use np.einsum for spherical harmonic summations
         use np.radians to convert from degrees to radians
     Updated 04/2023: allow love numbers to be None for custom units case
@@ -159,8 +160,10 @@ def harmonic_transform(
         MMAX = np.copy(LMAX)
 
     # verify that longitudes cover the complete sphere
-    assert np.isclose(np.min(lon), 0.0)
-    assert np.isclose(np.max(lon), 360.0)
+    if not np.isclose(np.min(lon), 0.0):
+        raise ValueError(f'Longitude array must start at 0 degrees')
+    if not np.isclose(np.max(lon), 360.0):
+        raise ValueError(f'Longitude array must end at 360 degrees')
     # number of longitudinal points
     phimax = len(np.squeeze(lon))
     # colatitude in radians

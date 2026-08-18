@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 read_SLR_harmonics.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2026)
 
 Reads in low-degree spherical harmonic coefficients calculated from
     Satellite Laser Ranging (SLR) measurements
@@ -50,6 +50,7 @@ PROGRAM DEPENDENCIES:
     time.py: utilities for calculating time operations
 
 UPDATE HISTORY:
+    Updated 08/2026: change assertions to value errors
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: improve typing for variables in docstrings
     Updated 11/2022: use f-strings for formatting verbose or ascii output
@@ -208,7 +209,10 @@ def read_CSR_monthly_6x1(SLR_file, SCALE=1e-10, HEADER=True):
         line_contents = file_contents[count].split()
         # verify arc number from iteration and file
         IARC = int(line_contents[0])
-        assert IARC == (d + 1)
+        if IARC != (d + 1):
+            raise ValueError(
+                f'Arc number mismatch: expected {d + 1}, got {IARC}'
+            )
         # modified Julian date of the middle of the month
         Ylms['MJD'][d] = np.mean(np.array(line_contents[5:7], dtype=np.float64))
         # date of the mid-point of the arc given in years
