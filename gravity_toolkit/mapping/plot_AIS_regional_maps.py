@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 plot_AIS_regional_maps.py
-Written by Tyler Sutterley (05/2023)
+Written by Tyler Sutterley (08/2026)
 Creates GMT-like plots for sub-regions of Antarctica
 on a polar stereographic south (3031) projection
 
@@ -31,6 +31,7 @@ PYTHON DEPENDENCIES:
         https://pypi.python.org/pypi/GDAL/
 
 UPDATE HISTORY:
+    Updated 08/2026: use upstream file logger for verbose output
     Updated 05/2023: use pathlib to define and operate on paths
         added option to set the input variable names or column order
     Updated 03/2023: switch from parameter files to argparse arguments
@@ -248,21 +249,26 @@ except (NameError, ValueError) as exc:
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(pathlib.Path(sys.argv[0]).name)
-    logging.info(args)
-    logging.info(f'module name: {__name__}')
+    # get logger
+    logger = logging.getLogger(__name__)
+    logger.info(pathlib.Path(sys.argv[0]).name)
+    logger.info(args)
+    logger.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info(f'parent process: {os.getppid():d}')
-    logging.info(f'process id: {os.getpid():d}')
+        logger.info(f'parent process: {os.getppid():d}')
+    logger.info(f'process id: {os.getpid():d}')
 
 
 # PURPOSE: plot Rignot 2012 drainage basin polylines
 def plot_rignot_basins(ax, base_dir):
+    # get logger
+    logger = logging.getLogger(__name__)
     region_directory = base_dir.joinpath(*region_dir)
     # for each region
     for reg in region_title:
         # read the regional polylines
         region_file = region_directory.joinpath(region_filename.format(reg))
+        logger.debug(str(region_file))
         region_ll = np.loadtxt(region_file, dtype=region_dtype)
         # converting region lat/lon into plot coordinates
         points = projection.transform_points(
@@ -273,9 +279,11 @@ def plot_rignot_basins(ax, base_dir):
 
 # PURPOSE: plot Antarctic drainage basins from IMBIE2 (Mouginot)
 def plot_IMBIE2_basins(ax, base_dir):
+    # get logger
+    logger = logging.getLogger(__name__)
     # read drainage basin polylines from shapefile (using splat operator)
     basin_shapefile = base_dir.joinpath(*IMBIE_basin_file)
-    logging.debug(str(basin_shapefile))
+    logger.debug(str(basin_shapefile))
     shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
@@ -297,10 +305,12 @@ def plot_IMBIE2_basins(ax, base_dir):
 
 # PURPOSE: plot Antarctic drainage sub-basins from IMBIE-2 (Mouginot)
 def plot_IMBIE2_subbasins(ax, base_dir):
+    # get logger
+    logger = logging.getLogger(__name__)
     # read drainage basin polylines from shapefile (using splat operator)
     IMBIE_subbasin_file = ['Basins_20Oct2016_v1.7', 'Basins_v1.7.shp']
     basin_shapefile = base_dir.joinpath('masks', *IMBIE_subbasin_file)
-    logging.debug(str(basin_shapefile))
+    logger.debug(str(basin_shapefile))
     shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
@@ -320,12 +330,14 @@ def plot_IMBIE2_subbasins(ax, base_dir):
 
 # PURPOSE: plot Amundsen Sea basins from Mouginot et al. (2014)
 def plot_amundsen_basins(ax, base_dir):
+    # get logger
+    logger = logging.getLogger(__name__)
     # read Amundsen Sea basin polylines from shapefile
     basin_shapefile = base_dir.joinpath(
         'masks', 'Basins_Admunsen', 'Basins_admunsen_match_coastline_and_IS.shp'
     )
     basin_title = ['pope_smith', 'haynes', 'thwaites', 'pine_island', 'kohler']
-    logging.debug(str(basin_shapefile))
+    logger.debug(str(basin_shapefile))
     shape_input = shapefile.Reader(str(basin_shapefile))
     shape_entities = shape_input.shapes()
     # for each shape entity
@@ -337,8 +349,10 @@ def plot_amundsen_basins(ax, base_dir):
 
 # PURPOSE: plot Antarctic grounded ice delineation
 def plot_grounded_ice(ax, base_dir, START=1):
+    # get logger
+    logger = logging.getLogger(__name__)
     grounded_ice_shapefile = base_dir.joinpath(*coast_file)
-    logging.debug(str(grounded_ice_shapefile))
+    logger.debug(str(grounded_ice_shapefile))
     shape_input = shapefile.Reader(str(grounded_ice_shapefile))
     shape_entities = shape_input.shapes()
     shape_attributes = shape_input.records()
@@ -351,9 +365,11 @@ def plot_grounded_ice(ax, base_dir, START=1):
 
 # PURPOSE: plot MODIS mosaic of Antarctica as background image
 def plot_image_mosaic(ax, base_dir, xlimits, ylimits, MASKED=True):
+    # get logger
+    logger = logging.getLogger(__name__)
     # read MODIS mosaic of Antarctica
     image_geotiff_file = base_dir.joinpath(*image_file)
-    logging.debug(str(image_geotiff_file))
+    logger.debug(str(image_geotiff_file))
     ds = osgeo.gdal.Open(str(image_geotiff_file))
     # get geotiff info
     info_geotiff = ds.GetGeoTransform()
@@ -412,11 +428,31 @@ def add_plot_scale(ax, X, Y, dx, dy, masked, fc1='w', fc2='k'):
             Y - 1.8 * dy,
             Y + 2.4 * dy,
         ]
-        ax.fill([x1, x2, x2, x1, x1], [y1, y1, y2, y2, y1], fc1, zorder=4)
+        ax.fill(
+            [x1, x2, x2, x1, x1],
+            [y1, y1, y2, y2, y1],
+            fc1,
+            zorder=4,
+        )
     for i, c in enumerate([fc1, fc2, fc1, fc2]):
-        x1, x2, y1, y2 = [X + 0.25 * i * dx, X + 0.25 * (i + 1) * dx, Y, Y + dy]
-        ax.fill([x1, x2, x2, x1, x1], [y1, y1, y2, y2, y1], c, zorder=5)
-    ax.plot([X, X + dx, X + dx, X, X], [Y, Y, Y + dy, Y + dy, Y], fc2, zorder=6)
+        x1, x2, y1, y2 = [
+            X + 0.25 * i * dx,
+            X + 0.25 * (i + 1) * dx,
+            Y,
+            Y + dy,
+        ]
+        ax.fill(
+            [x1, x2, x2, x1, x1],
+            [y1, y1, y2, y2, y1],
+            c,
+            zorder=5,
+        )
+    ax.plot(
+        [X, X + dx, X + dx, X, X],
+        [Y, Y, Y + dy, Y + dy, Y],
+        fc2,
+        zorder=6,
+    )
     for i in range(3):
         ax.plot(
             [X + 0.5 * i * dx, X + 0.5 * i * dx],
@@ -482,6 +518,8 @@ def plot_grid(
     FIGURE_DPI=None,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # read CPT or use color map
     if CPT_FILE is not None:
         # cpt file
@@ -830,7 +868,7 @@ def plot_grid(
     # create output directory if non-existent
     FIGURE_FILE.parent.mkdir(mode=MODE, parents=True, exist_ok=True)
     # save to file
-    logging.info(str(FIGURE_FILE))
+    logger.info(str(FIGURE_FILE))
     plt.savefig(
         FIGURE_FILE,
         metadata={'Title': pathlib.Path(sys.argv[0]).name},
@@ -1093,7 +1131,9 @@ def main():
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # try to run the analysis with listed parameters
     try:
@@ -1137,8 +1177,8 @@ def main():
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
-        logging.critical(f'process id {os.getpid():d} failed')
-        logging.error(traceback.format_exc())
+        logger.critical(f'process id {os.getpid():d} failed')
+        logger.error(traceback.format_exc())
 
 
 # run main program

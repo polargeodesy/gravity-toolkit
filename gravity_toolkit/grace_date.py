@@ -47,6 +47,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 08/2026: added verbosity argument to print debugging information
+        use numpy datetime arrays to save start and end dates
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: use f-strings for formatting output date lines
         added regex formatting for CNES GRGS harmonics
@@ -110,7 +111,9 @@ import logging
 import pathlib
 import argparse
 import numpy as np
+import collections
 import gravity_toolkit as gravtk
+from datetime import datetime
 
 
 # PURPOSE: parses GRACE/GRACE-FO data files and assigns month numbers
@@ -177,10 +180,8 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
     n_files = len(input_files)
 
     # define date variables
-    start_yr = np.zeros((n_files))  # year start date
-    end_yr = np.zeros((n_files))  # year end date
-    start_day = np.zeros((n_files))  # day number start date
-    end_day = np.zeros((n_files))  # day number end date
+    start_date = np.zeros((n_files), dtype='datetime64[s]')  # start date
+    end_date = np.zeros((n_files), dtype='datetime64[s]')  # end date
     mid_day = np.zeros((n_files))  # mid-month day
     tot_days = np.zeros((n_files))  # number of days since Jan 2002
     tdec = np.zeros((n_files))  # date in decimal form
@@ -188,74 +189,47 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
 
     # for each data file
     for t, infile in enumerate(input_files):
-        if PROC in (
-            'GRAZ',
-            'Swarm',
-        ):
+        if PROC in ('GRAZ', 'Swarm'):
             # get date lists for the start and end of fields
-            start_date, end_date = gravtk.time.parse_gfc_file(
+            start_date[t], end_date[t] = gravtk.time.parse_gfc_file(
                 infile, PROC, DSET
-            )
-            # start and end year
-            start_yr[t] = np.float64(start_date[0])
-            end_yr[t] = np.float64(end_date[0])
-            # number of days in each month for the calendar year
-            dpm = gravtk.time.calendar_days(start_yr[t])
-            # start and end day of the year
-            start_day[t] = (
-                np.sum(dpm[: start_date[1] - 1])
-                + start_date[2]
-                + start_date[3] / 24.0
-                + start_date[4] / 1440.0
-                + start_date[5] / 86400.0
-            )
-            end_day[t] = (
-                np.sum(dpm[: end_date[1] - 1])
-                + end_date[2]
-                + end_date[3] / 24.0
-                + end_date[4] / 1440.0
-                + end_date[5] / 86400.0
             )
         else:
             # get date lists for the start and end of fields
-            start_date, end_date = gravtk.time.parse_grace_file(infile)
-            # start and end year
-            start_yr[t] = np.float64(start_date[0])
-            end_yr[t] = np.float64(end_date[0])
-            # start and end day of the year
-            start_day[t] = np.float64(start_date[1])
-            end_day[t] = np.float64(end_date[1])
+            start_date[t], end_date[t] = gravtk.time.parse_grace_file(infile)
+        # start year and day of the year
+        start_struct = start_date[t].astype(datetime).timetuple()
+        start_yr = start_struct.tm_year
+        start_day = start_struct.tm_yday
+        # end year and day of the year
+        end_struct = end_date[t].astype(datetime).timetuple()
+        end_yr = end_struct.tm_year
+        end_day = end_struct.tm_yday
 
         # number of days in the starting year for leap and standard years
-        dpy = gravtk.time.calendar_days(start_yr[t]).sum()
+        dpy = gravtk.time.calendar_days(start_yr).sum()
         # end date taking into account measurements taken on different years
-        end_cyclic = (end_yr[t] - start_yr[t]) * dpy + end_day[t]
+        end_cyclic = (end_yr - start_yr) * dpy + end_day
         # calculate mid-month value
-        mid_day[t] = np.mean([start_day[t], end_cyclic])
+        mid_day[t] = np.mean([start_day, end_cyclic])
 
         # calculate Modified Julian Day from start_yr and mid_day
         MJD = gravtk.time.convert_calendar_dates(
-            start_yr[t], 1.0, mid_day[t], epoch=(1858, 11, 17, 0, 0, 0)
+            start_yr, 1.0, mid_day[t], epoch=(1858, 11, 17, 0, 0, 0)
         )
         # convert from Modified Julian Days to calendar dates
         cal_date = gravtk.time.convert_julian(MJD + 2400000.5)
 
         # Calculating the mid-month date in decimal form
-        tdec[t] = start_yr[t] + mid_day[t] / dpy
+        tdec[t] = start_yr + mid_day[t] / dpy
 
         # Calculation of total days since start of campaign
-        count = 0
-        n_yrs = np.int64(start_yr[t] - 2002)
-        # for each of the GRACE years up to the file year
-        for iyr in range(n_yrs):
-            # year
-            year = 2002 + iyr
-            # add all days from prior years to count
-            # number of days in year i (if leap year or standard year)
-            count += gravtk.time.calendar_days(year).sum()
-
-        # calculating the total number of days since 2002
-        tot_days[t] = np.mean([count + start_day[t], count + end_cyclic])
+        # add all days from prior years to count
+        # number of days in year i (if leap year or standard year)
+        count = np.sum(
+            [gravtk.time.calendar_days(y) for y in range(2002, start_yr)]
+        )
+        tot_days[t] = count + mid_day[t]
 
         # Calculates the month number (or 10-day number for CNES RL01,RL02)
         if (PROC == 'CNES') and (DREL in ('RL01', 'RL02')):
@@ -285,18 +259,33 @@ def grace_date(base_dir, PROC='', DREL='', DSET='', OUTPUT=True, MODE=0o775):
         print('{0} {1:>10} {2:>11} {3:>10} {4:>13}'.format(*args), file=fid)
 
     # create python dictionary mapping input file names with GRACE months
-    grace_files = {}
+    grace_files = collections.OrderedDict()
+    # add attributes
+    grace_files.attrs = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'time_decimal': tdec,
+    }
     # for each data file
     for t, infile in enumerate(input_files):
         # add file to python dictionary mapped to GRACE/GRACE-FO month
         grace_files[mon[t]] = grace_dir.joinpath(infile)
         # print to GRACE dates ascii file (NOTE: tot_days will be rounded)
         if OUTPUT:
+            # start year and day of the year
+            start_struct = start_date[t].astype(datetime).timetuple()
+            start_yr = start_struct.tm_year
+            start_day = start_struct.tm_yday
+            # end year and day of the year
+            end_struct = end_date[t].astype(datetime).timetuple()
+            end_yr = end_struct.tm_year
+            end_day = end_struct.tm_yday
+            # print to GRACE dates ascii file
             print(
                 (
                     f'{tdec[t]:13.8f} {mon[t]:03d} '
-                    f'{start_yr[t]:8.0f} {start_day[t]:03.0f} '
-                    f'{end_yr[t]:8.0f} {end_day[t]:03.0f} '
+                    f'{start_yr:8.0f} {start_day:03.0f} '
+                    f'{end_yr:8.0f} {end_day:03.0f} '
                     f'{tot_days[t]:8.0f}'
                 ),
                 file=fid,

@@ -151,6 +151,7 @@ PROGRAM DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 08/2026: use default file logger for valid and failed program runs
+        include additional attributes to output files for CF compliance
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 03/2023: add root attributes to output netCDF4 and HDF5 files
         use attributes from units class for writing to netCDF4/HDF5 files
@@ -270,6 +271,8 @@ def grace_spatial_maps(
     attributes['product_name'] = DSET
     attributes['product_type'] = 'gravity_field'
     attributes['title'] = 'GRACE/GRACE-FO Spatial Data'
+    # add citation to John's 1998 paper
+    attributes['citation'] = 'https://doi.org/10.1029/98jb02844'
     # list object of output files for file logs (full path)
     output_files = []
 
@@ -333,6 +336,10 @@ def grace_spatial_maps(
     # add attributes for input GRACE/GRACE-FO spherical harmonics
     for att_name, att_val in Ylms['attributes'].items():
         attributes[att_name] = att_val
+    # get the start and end dates for the GRACE/GRACE-FO data
+    SD = Ylms.attrs['start_date'].min().astype('datetime64[D]')
+    ED = Ylms.attrs['end_date'].max().astype('datetime64[D]')
+
     # use a mean file for the static field to remove
     if MEAN_FILE:
         # read data form for input mean file (ascii, netCDF4, HDF5, gfc)
@@ -478,6 +485,17 @@ def grace_spatial_maps(
     attributes['earth_radius'] = f'{factors.rad_e:0.3f} cm'
     attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm^3'
     attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
+    # add geospatial attributes
+    attributes['ROOT']['geospatial_lat_min'] = grid.lat.min()
+    attributes['ROOT']['geospatial_lat_max'] = grid.lat.max()
+    attributes['ROOT']['geospatial_lon_min'] = grid.lon.min()
+    attributes['ROOT']['geospatial_lon_max'] = grid.lon.max()
+    attributes['ROOT']['geospatial_lat_units'] = 'degrees_north'
+    attributes['ROOT']['geospatial_lon_units'] = 'degrees_east'
+    # add temporal attributes
+    attributes['ROOT']['time_coverage_start'] = np.datetime_as_string(SD)
+    attributes['ROOT']['time_coverage_end'] = np.datetime_as_string(ED)
+    attributes['ROOT']['time_coverage_duration'] = str(ED - SD)
     # add attributes to output spatial object
     attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
     grid.attributes['ROOT'] = attributes
@@ -486,13 +504,13 @@ def grace_spatial_maps(
     file_format = '{0}{1}_L{2:d}{3}{4}{5}_{6:03d}.{7}'
     # converting harmonics to truncated, smoothed coefficients in units
     # combining harmonics to calculate output spatial fields
-    for i, grace_month in enumerate(GRACE_Ylms.month):
+    for t, grace_month in enumerate(GRACE_Ylms.month):
         # GRACE/GRACE-FO harmonics for time t
-        Ylms = GRACE_Ylms.index(i)
+        Ylms = GRACE_Ylms.index(t)
         # Remove GIA rate for time
-        Ylms.subtract(GIA_Ylms.index(i))
+        Ylms.subtract(GIA_Ylms.index(t))
         # Remove monthly files to be removed
-        Ylms.subtract(remove_Ylms.index(i))
+        Ylms.subtract(remove_Ylms.index(t))
         # smooth harmonics and convert to output units
         Ylms.convolve(dfactor * wt)
         # convert spherical harmonics to output spatial grid
@@ -511,7 +529,7 @@ def grace_spatial_maps(
         grid.time = np.copy(Ylms.time)
         grid.month = np.copy(Ylms.month)
 
-        # output monthly files to ascii, netCDF4 or HDF5
+        # build output filename
         fargs = (
             FILE_PREFIX,
             units,
@@ -522,7 +540,9 @@ def grace_spatial_maps(
             grace_month,
             suffix[DATAFORM],
         )
-        OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(file_format.format(*fargs))
+        filename = file_format.format(*fargs)
+        OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(filename)
+        # write spatial data to output file
         grid.to_file(
             OUTPUT_FILE,
             format=DATAFORM,
