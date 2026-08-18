@@ -16,6 +16,8 @@ PYTHON DEPENDENCIES:
 
 UPDATE HISTORY:
     Updated 08/2026: add file logger for reading and writing files
+        add ocean and land seasonal geocenter functions
+        turn some functions into classmethods to create geocenter objects
     Updated 07/2026: add dunder (magic) methods for mathematical operations
         add HTML representation of geocenter class
     Updated 06/2024: use wrapper to importlib for optional dependencies
@@ -95,26 +97,22 @@ class geocenter(object):
         # WGS84 ellipsoid parameters
         a_axis = 6378137.0  # [m] semimajor axis of the ellipsoid
         flat = 1.0 / 298.257223563  # flattening of the ellipsoid
-        # Mean Earth's Radius in mm having the same volume as WGS84 ellipsoid
-        kwargs.setdefault(
-            'radius', 1000.0 * a_axis * (1.0 - flat) ** (1.0 / 3.0)
-        )
-        # cartesian coordinates
-        kwargs.setdefault('X', None)
-        kwargs.setdefault('Y', None)
-        kwargs.setdefault('Z', None)
+        # Earth's mean radius having the same volume as WGS84 ellipsoid
+        radius = 1000.0 * a_axis * (1.0 - flat) ** (1.0 / 3.0)
         # set default class attributes
-        self.C10 = None
-        self.C11 = None
-        self.S11 = None
-        self.X = copy.copy(kwargs['X'])
-        self.Y = copy.copy(kwargs['Y'])
-        self.Z = copy.copy(kwargs['Z'])
-        self.time = None
-        self.month = None
-        self.filename = None
+        self.C10 = kwargs.get('C10', None)
+        self.C11 = kwargs.get('C11', None)
+        self.S11 = kwargs.get('S11', None)
+        # cartesian coordinates
+        self.X = kwargs.get('X', None)
+        self.Y = kwargs.get('Y', None)
+        self.Z = kwargs.get('Z', None)
+        # time and month variables
+        self.time = kwargs.get('time', None)
+        self.month = kwargs.get('month', None)
+        self.filename = kwargs.get('filename', None)
         # Average Radius of the Earth [mm]
-        self.radius = copy.copy(kwargs['radius'])
+        self.radius = kwargs.get('radius', radius)
         # create logger for class
         self.logger = logging.getLogger(__name__)
         # iterator
@@ -195,8 +193,10 @@ class geocenter(object):
             # first column: ISO-formatted date and time
             cal_date = time.strptime(line_contents[0], r'%Y-%m-%dT%H:%M:%S')
             # verify that dates are within year and month
-            assert cal_date.tm_year == year
-            assert cal_date.tm_mon == month
+            if cal_date.tm_year != year:
+                raise ValueError(f'Years mismatch: {cal_date.tm_year} {year}')
+            if cal_date.tm_mon != month:
+                raise ValueError(f'Months mismatch: {cal_date.tm_mon} {month}')
             # second-fourth columns: X, Y and Z geocenter variations
             temp.X[i], temp.Y[i], temp.Z[i] = np.array(
                 line_contents[1:], dtype='f'
@@ -824,6 +824,72 @@ class geocenter(object):
         # return the geocenter harmonics
         return self.from_dict(DEG1)
 
+    @classmethod
+    def land_seasonal(cls, time):
+        """
+        Model the seasonal component of geocenter motion induced by land water
+        variations as estimated by :cite:t:`Chen:1999ki`
+
+        Parameters
+        ----------
+        time: np.ndarray
+            decimal years for geocenter motion
+        """
+        # Annual amplitudes of geocenter components (mm)
+        AA = dict(X=1.28, Y=0.52, Z=3.30)
+        # Annual phase of geocenter components (radians)
+        AP = dict(X=np.radians(44), Y=np.radians(182), Z=np.radians(43))
+        # Semi-Annual amplitudes of geocenter components (mm)
+        SAA = dict(X=0.15, Y=0.56, Z=0.50)
+        # Semi-Annual phase of geocenter components (radians)
+        SAP = dict(X=np.radians(331), Y=np.radians(312), Z=np.radians(75))
+        # dictionary with geocenter components
+        XYZ = {}
+        for key in ['X', 'Y', 'Z']:
+            # annual and semi-annual components of the geocenter motion
+            ANN = AA[key] * np.sin(2.0 * np.pi * time + AP[key])
+            SEMI = SAA[key] * np.sin(4.0 * np.pi * time + SAP[key])
+            XYZ[key] = ANN + SEMI
+        # create geocenter object from the components
+        temp = cls(time=time, **XYZ).from_cartesian()
+        # remove the mean geocenter motion from the seasonal component
+        temp.mean(apply=True)
+        # return the seasonal geocenter motion
+        return temp
+
+    @classmethod
+    def ocean_seasonal(cls, time):
+        """
+        Model the seasonal component of geocenter motion induced by ocean
+        variations as estimated by :cite:t:`Chen:1999ki`
+
+        Parameters
+        ----------
+        time: np.ndarray
+            decimal years for geocenter motion
+        """
+        # Annual amplitudes of geocenter components (mm)
+        AA = dict(X=0.96, Y=0.97, Z=0.49)
+        # Annual phase of geocenter components (radians)
+        AP = dict(X=np.radians(73), Y=np.radians(52), Z=np.radians(3))
+        # Semi-Annual amplitudes of geocenter components (mm)
+        SAA = dict(X=0.86, Y=0.73, Z=0.25)
+        # Semi-Annual phase of geocenter components (radians)
+        SAP = dict(X=np.radians(187), Y=np.radians(173), Z=np.radians(232))
+        # dictionary with geocenter components
+        XYZ = {}
+        for key in ['X', 'Y', 'Z']:
+            # annual and semi-annual components of the geocenter motion
+            ANN = AA[key] * np.sin(2.0 * np.pi * time + AP[key])
+            SEMI = SAA[key] * np.sin(4.0 * np.pi * time + SAP[key])
+            XYZ[key] = ANN + SEMI
+        # create geocenter object from the components
+        temp = cls(time=time, **XYZ).from_cartesian()
+        # remove the mean geocenter motion from the seasonal component
+        temp.mean(apply=True)
+        # return the seasonal geocenter motion
+        return temp
+
     def copy(self, **kwargs):
         """
         Copy a ``geocenter`` object to a new ``geocenter`` object
@@ -899,7 +965,8 @@ class geocenter(object):
                 pass
         return self
 
-    def from_harmonics(self, temp, **kwargs):
+    @classmethod
+    def from_harmonics(cls, temp, **kwargs):
         """
         Convert a ``harmonics`` object to a ``geocenter`` object
 
@@ -910,30 +977,45 @@ class geocenter(object):
         fields: list
             default keys in ``harmonics`` object
         """
+        # reshape to matrices if flattened
         # assign degree and order fields
         temp.update_dimensions()
         # set default keyword arguments
         kwargs.setdefault('fields', ['time', 'month', 'filename'])
-        # try to assign variables to self
+        # try to get attributes from the harmonics object
+        attributes = {}
         for key in kwargs['fields']:
             try:
                 val = getattr(temp, key)
-                setattr(self, key, np.copy(val))
             except AttributeError:
                 pass
-        # get spherical harmonic objects
-        if temp.ndim == 2:
-            self.C10 = np.copy(temp.clm[1, 0])
-            self.C11 = np.copy(temp.clm[1, 1])
-            self.S11 = np.copy(temp.slm[1, 1])
+            else:
+                attributes[key] = np.copy(val)
+        # get spherical harmonics
+        if temp.flattened:
+            # find the indices of the degree 1 spherical harmonics
+            # l0 should be 1 and l1 should be lmax + 1
+            (l0,) = np.flatnonzero((temp.l == 1) & (temp.m == 0))
+            (l1,) = np.flatnonzero((temp.l == 1) & (temp.m == 1))
+            # extract from flattened arrays
+            C10 = temp.clm[l0]
+            C11 = temp.clm[l1]
+            S11 = temp.slm[l1]
+        elif temp.ndim == 2:
+            # extract from matrix
+            C10 = np.copy(temp.clm[1, 0])
+            C11 = np.copy(temp.clm[1, 1])
+            S11 = np.copy(temp.slm[1, 1])
         elif temp.ndim == 3:
-            self.C10 = np.copy(temp.clm[1, 0, :])
-            self.C11 = np.copy(temp.clm[1, 1, :])
-            self.S11 = np.copy(temp.slm[1, 1, :])
+            # extract from matrix with time dimension
+            C10 = np.copy(temp.clm[1, 0, :])
+            C11 = np.copy(temp.clm[1, 1, :])
+            S11 = np.copy(temp.slm[1, 1, :])
         # return the geocenter object
-        return self
+        return cls(C10=C10, C11=C11, S11=S11, **attributes)
 
-    def from_matrix(self, clm, slm):
+    @classmethod
+    def from_matrix(cls, clm, slm, **kwargs):
         """
         Converts spherical harmonic matrices to a ``geocenter`` object
 
@@ -948,10 +1030,11 @@ class geocenter(object):
         clm = np.atleast_3d(clm)
         slm = np.atleast_3d(slm)
         # output geocenter object
-        self.C10 = np.copy(clm[1, 0, :])
-        self.C11 = np.copy(clm[1, 1, :])
-        self.S11 = np.copy(slm[1, 1, :])
-        return self
+        C10 = np.copy(clm[1, 0, :])
+        C11 = np.copy(clm[1, 1, :])
+        S11 = np.copy(slm[1, 1, :])
+        # return the geocenter object
+        return cls(C10=C10, C11=C11, S11=S11, **kwargs)
 
     def to_dict(self, **kwargs):
         """
@@ -1171,12 +1254,19 @@ class geocenter(object):
         temp.C10 = np.mean(self.C10[indices])
         temp.C11 = np.mean(self.C11[indices])
         temp.S11 = np.mean(self.S11[indices])
+        temp.to_cartesian()
         # calculating the time-variable gravity field by removing
         # the static component of the gravitational field
         if apply:
+            # remove the mean degree-one components
             self.C10 -= temp.C10
             self.C11 -= temp.C11
             self.S11 -= temp.S11
+        if apply and np.any(self.X) and np.any(self.Y) and np.any(self.Z):
+            # remove the mean geocenter motion
+            self.X -= temp.X
+            self.Y -= temp.Y
+            self.Z -= temp.Z
         # calculate mean of temporal variables
         for key in ['time', 'month']:
             try:
