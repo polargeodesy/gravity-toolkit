@@ -977,6 +977,7 @@ class geocenter(object):
         fields: list
             default keys in ``harmonics`` object
         """
+        # reshape to matrices if flattened
         # assign degree and order fields
         temp.update_dimensions()
         # set default keyword arguments
@@ -991,11 +992,22 @@ class geocenter(object):
             else:
                 attributes[key] = np.copy(val)
         # get spherical harmonics
-        if temp.ndim == 2:
+        if temp.flattened:
+            # find the indices of the degree 1 spherical harmonics
+            # l0 should be 1 and l1 should be lmax + 1
+            (l0,) = np.flatnonzero((temp.l == 1) & (temp.m == 0))
+            (l1,) = np.flatnonzero((temp.l == 1) & (temp.m == 1))
+            # extract from flattened arrays
+            C10 = temp.clm[l0]
+            C11 = temp.clm[l1]
+            S11 = temp.slm[l1]
+        elif temp.ndim == 2:
+            # extract from matrix
             C10 = np.copy(temp.clm[1, 0])
             C11 = np.copy(temp.clm[1, 1])
             S11 = np.copy(temp.slm[1, 1])
         elif temp.ndim == 3:
+            # extract from matrix with time dimension
             C10 = np.copy(temp.clm[1, 0, :])
             C11 = np.copy(temp.clm[1, 1, :])
             S11 = np.copy(temp.slm[1, 1, :])
@@ -1242,12 +1254,18 @@ class geocenter(object):
         temp.C10 = np.mean(self.C10[indices])
         temp.C11 = np.mean(self.C11[indices])
         temp.S11 = np.mean(self.S11[indices])
+        temp.to_cartesian()
         # calculating the time-variable gravity field by removing
         # the static component of the gravitational field
         if apply:
+            # remove the mean degree-one components
             self.C10 -= temp.C10
             self.C11 -= temp.C11
             self.S11 -= temp.S11
+            # remove the mean geocenter motion
+            self.X -= temp.X
+            self.Y -= temp.Y
+            self.Z -= temp.Z
         # calculate mean of temporal variables
         for key in ['time', 'month']:
             try:
