@@ -79,12 +79,14 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(pathlib.Path(sys.argv[0]).name)
-    logging.info(args)
-    logging.info(f'module name: {__name__}')
+    # get logger
+    logger = logging.getLogger(__name__)
+    logger.info(pathlib.Path(sys.argv[0]).name)
+    logger.info(args)
+    logger.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info(f'parent process: {os.getppid():d}')
-    logging.info(f'process id: {os.getpid():d}')
+        logger.info(f'parent process: {os.getppid():d}')
+    logger.info(f'process id: {os.getpid():d}')
 
 
 # PURPOSE: combine the sea level data with the input dataset
@@ -99,6 +101,8 @@ def combine_sea_level_data(
     FILE_PREFIX=None,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # output filename suffix
     suffix = dict(ascii='txt', netCDF4='nc', HDF5='H5')[DATAFORM]
     # input and output file format
@@ -133,7 +137,7 @@ def combine_sea_level_data(
     output_index_file = DIRECTORY.joinpath('index.txt')
     fid = output_index_file.open(mode='w', encoding='utf8')
     # print the path to the index file
-    logging.info(str(output_index_file))
+    logger.info(str(output_index_file))
 
     # for each grace month and input file
     for Ylms in data_Ylms:
@@ -286,7 +290,9 @@ def main():
 
     # create logger for verbosity level
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # try to run the analysis with listed parameters
     try:
@@ -307,8 +313,8 @@ def main():
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
-        logging.critical(f'process id {os.getpid():d} failed')
-        logging.error(traceback.format_exc())
+        logger.critical(f'process id {os.getpid():d} failed')
+        logger.error(traceback.format_exc())
 
 
 # run main program

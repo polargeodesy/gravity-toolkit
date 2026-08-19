@@ -115,12 +115,14 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(pathlib.Path(sys.argv[0]).name)
-    logging.info(args)
-    logging.info(f'module name: {__name__}')
+    # get logger
+    logger = logging.getLogger(__name__)
+    logger.info(pathlib.Path(sys.argv[0]).name)
+    logger.info(args)
+    logger.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info(f'parent process: {os.getppid():d}')
-    logging.info(f'process id: {os.getpid():d}')
+        logger.info(f'parent process: {os.getppid():d}')
+    logger.info(f'process id: {os.getpid():d}')
 
 
 # program module to run with specified parameters
@@ -145,6 +147,8 @@ def sea_level_stokes(
     OUTPUT_DIRECTORY=None,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # output directory setup
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
@@ -202,7 +206,7 @@ def sea_level_stokes(
     index_file = OUTPUT_DIRECTORY.joinpath(INDEX)
     fid = index_file.open(mode='w', encoding='utf8')
     # print the path to the index file
-    logging.info(index_file)
+    logger.info(index_file)
 
     # for each month
     output_files = []
@@ -287,47 +291,6 @@ def sea_level_stokes(
     index_file.chmod(mode=MODE)
     # return the list of output files
     return output_files
-
-
-# PURPOSE: print a file log for the sea level harmonics calculation
-def output_log_file(input_arguments, output_files):
-    # format: sea_level_stokes_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
-    LOGFILE = 'sea_level_stokes_run_{0}_PID-{1:d}.log'.format(*args)
-    # create a unique log and open the log file
-    DIRECTORY = pathlib.Path(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
-    logging.basicConfig(stream=fid, level=logging.INFO)
-    # print argument values sorted alphabetically
-    logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(input_arguments).items()):
-        logging.info(f'{arg}: {value}')
-    # print output files
-    logging.info('\n\nOUTPUT FILES:')
-    for f in output_files:
-        logging.info(f)
-    # close the log file
-    fid.close()
-
-
-# PURPOSE: print a error file log for the sea level harmonics calculation
-def output_error_log_file(input_arguments):
-    # format: failed_sea_level_stokes_run_2002-04-01_PID-70335.log
-    args = (time.strftime('%Y-%m-%d', time.localtime()), os.getpid())
-    LOGFILE = 'failed_sea_level_stokes_run_{0}_PID-{1:d}.log'.format(*args)
-    # create a unique log and open the log file
-    DIRECTORY = pathlib.Path(input_arguments.output_directory)
-    fid = gravtk.utilities.create_unique_file(DIRECTORY.joinpath(LOGFILE))
-    logging.basicConfig(stream=fid, level=logging.INFO)
-    # print argument values sorted alphabetically
-    logging.info('ARGUMENTS:')
-    for arg, value in sorted(vars(input_arguments).items()):
-        logging.info(f'{arg}: {value}')
-    # print traceback error
-    logging.info('\n\nTRACEBACK ERROR:')
-    traceback.print_exc(file=fid)
-    # close the log file
-    fid.close()
 
 
 # PURPOSE: create argument parser
@@ -533,8 +496,8 @@ def arguments():
         help='Land-sea mask for redistributing mascon mass and land water flux',
     )
     # Output log file for each job in forms
-    # sea_level_stokes_run_2002-04-01_PID-00000.log
-    # failed_sea_level_stokes_run_2002-04-01_PID-00000.log
+    # validrun_2002-04-01T00:00:00_PID-00000.log
+    # failedrun_2002-04-01T00:00:00_PID-00000.log
     parser.add_argument(
         '--log',
         default=False,
@@ -569,7 +532,9 @@ def main():
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # try to run the analysis with listed parameters
     try:
@@ -600,13 +565,24 @@ def main():
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
-        logging.critical(f'process id {os.getpid():d} failed')
-        logging.error(traceback.format_exc())
+        logger.critical(f'process id {os.getpid():d} failed')
+        logger.error(traceback.format_exc())
         if args.log:  # write failed job completion log file
-            output_error_log_file(args)
+            logfile = gravtk.utilities.create_log_file(
+                'failedrun',
+                filename=pathlib.Path(sys.argv[0]).name,
+                arguments=vars(args),
+            )
+            logger.info(logfile)
     else:
         if args.log:  # write successful job completion log file
-            output_log_file(args, output_files)
+            logfile = gravtk.utilities.create_log_file(
+                'validrun',
+                filename=pathlib.Path(sys.argv[0]).name,
+                arguments=vars(args),
+                output=output_files,
+            )
+            logger.info(logfile)
 
 
 # run main program
