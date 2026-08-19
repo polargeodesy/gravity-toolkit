@@ -78,12 +78,14 @@ import gravity_toolkit as gravtk
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(pathlib.Path(sys.argv[0]).name)
-    logging.info(args)
-    logging.info(f'module name: {__name__}')
+    # get logger
+    logger = logging.getLogger(__name__)
+    logger.info(pathlib.Path(sys.argv[0]).name)
+    logger.info(args)
+    logger.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info(f'parent process: {os.getppid():d}')
-    logging.info(f'process id: {os.getpid():d}')
+        logger.info(f'parent process: {os.getppid():d}')
+    logger.info(f'process id: {os.getpid():d}')
 
 
 # PURPOSE: create a shell script for running the sea level program
@@ -103,6 +105,8 @@ def make_sea_level_shells(
     VERBOSE=0,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # create output directory if currently non-existent
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
@@ -147,7 +151,7 @@ def make_sea_level_shells(
     output_shell_script = OUTPUT_DIRECTORY.joinpath(f1)
     fid = output_shell_script.open(mode='w', encoding='utf8')
     # print the path to the shell script
-    logging.info(str(output_shell_script))
+    logger.info(str(output_shell_script))
     # output file format
     file_format = '{0}L{1:d}_{2:03d}.{3}'
     # formatting string for each line in the shell script
@@ -324,7 +328,9 @@ def main():
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # try to run the analysis with listed parameters
     try:
@@ -350,8 +356,8 @@ def main():
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
-        logging.critical(f'process id {os.getpid():d} failed')
-        logging.error(traceback.format_exc())
+        logger.critical(f'process id {os.getpid():d} failed')
+        logger.error(traceback.format_exc())
 
 
 # run main program

@@ -111,6 +111,8 @@ def copy_parameter_files(
     OVERWRITE=False,
     MODE=0o775,
 ):
+    # get logger
+    logger = logging.getLogger(__name__)
     # read prior parameter file
     # Opening parameter file and assigning file ID object (fid)
     parameter_file = pathlib.Path(parameter_file).expanduser().absolute()
@@ -197,7 +199,7 @@ def copy_parameter_files(
         FILE = FILE.replace(key, val)
     # print old and new files
     output_file = parameter_file.with_name(FILE)
-    logging.info(f'{str(parameter_file)} ->\n\t{str(output_file)}\n')
+    logger.info(f'{str(parameter_file)} ->\n\t{str(output_file)}\n')
     # open file ID object for FILE
     fid = output_file.open(mode='w', encoding='utf8')
     # for each line in the original parameter file
@@ -449,7 +451,9 @@ def main():
 
     # create logger for verbosity level
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # run directly for file
     for f in args.parameters:

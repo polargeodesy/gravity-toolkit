@@ -34,6 +34,7 @@ import argparse
 import traceback
 import subprocess
 import multiprocessing
+from gravity_toolkit.utilities import build_logger
 
 
 # PURPOSE: converts a command line argument into an environment dictionary
@@ -46,10 +47,12 @@ def argtoenv(arg):
 
 
 # PURPOSE: run command and handle error exceptions
-def execute_command(comm, shell=False, env=None, verbose=False):
+def execute_command(comm, shell=False, env=None, verbose=0):
+    # get logger
+    logger = logging.getLogger(__name__)
     # create logger
-    loglevel = logging.INFO if verbose else logging.CRITICAL
-    logging.basicConfig(level=loglevel)
+    loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
+    logger = build_logger(__name__, level=loglevels[verbose])
     # try to run the command
     try:
         # run the command
@@ -59,13 +62,13 @@ def execute_command(comm, shell=False, env=None, verbose=False):
         p.wait()
         # print outputs from command
         stat, err = p.communicate()
-        logging.info(stat.decode('utf-8'))
+        logger.info(stat.decode('utf-8'))
     except Exception as exc:
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
-        logging.critical(f'process id {os.getpid():d} failed')
-        logging.error(traceback.format_exc())
+        logger.critical(f'process id {os.getpid():d} failed')
+        logger.error(traceback.format_exc())
 
 
 # PURPOSE: create argument parser
@@ -103,11 +106,12 @@ def arguments():
         action='store_true',
         help='Run specified commands through the shell',
     )
+    # print information about run
     parser.add_argument(
         '--verbose',
         '-V',
-        default=False,
-        action='store_true',
+        action='count',
+        default=0,
         help='Verbose output of run',
     )
     # return the parser

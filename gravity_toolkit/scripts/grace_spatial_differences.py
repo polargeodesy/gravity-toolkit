@@ -106,12 +106,14 @@ gia_mean_str['ascii'] = '_AW13_IJ05_ICE6G_mean'
 
 # PURPOSE: keep track of threads
 def info(args):
-    logging.info(pathlib.Path(sys.argv[0]).name)
-    logging.info(args)
-    logging.info(f'module name: {__name__}')
+    # get logger
+    logger = logging.getLogger(__name__)
+    logger.info(pathlib.Path(sys.argv[0]).name)
+    logger.info(args)
+    logger.info(f'module name: {__name__}')
     if hasattr(os, 'getppid'):
-        logging.info(f'parent process: {os.getppid():d}')
-    logging.info(f'process id: {os.getpid():d}')
+        logger.info(f'parent process: {os.getppid():d}')
+    logger.info(f'process id: {os.getpid():d}')
 
 
 # PURPOSE: calculate the GRACE/GRACE-FO difference map for each GIA model
@@ -593,7 +595,9 @@ def main():
 
     # create logger
     loglevels = [logging.CRITICAL, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
+    logger = gravtk.utilities.build_logger(
+        __name__, level=loglevels[args.verbose]
+    )
 
     # try to run the analysis with listed parameters
     try:
@@ -626,8 +630,8 @@ def main():
         # if there has been an error exception
         # print the type, value, and stack trace of the
         # current exception being handled
-        logging.critical(f'process id {os.getpid():d} failed')
-        logging.error(traceback.format_exc())
+        logger.critical(f'process id {os.getpid():d} failed')
+        logger.error(traceback.format_exc())
 
 
 # run main program
