@@ -3,7 +3,7 @@
 =================================
 
 - Computes the Gaussian weights as a function of degree
-- A normalized version of Christopher Jekeli's Gaussian averaging function
+- Normalized form of the Gaussian averaging function from :cite:t:`Jekeli:1981vj`
 
 Calling Sequence
 ################
@@ -18,3 +18,5 @@ Calling Sequence
 .. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/gauss_weights.py
 
 .. autofunction:: gravity_toolkit.gauss_weights
+
+.. autofunction:: gravity_toolkit.gauss_kernel
