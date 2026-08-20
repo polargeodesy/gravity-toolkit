@@ -7,7 +7,7 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/gfz_icgem_costg_ftp.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/datasets/gfz_icgem_costg_ftp.py
 
 Calling Sequence
 ################

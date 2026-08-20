@@ -76,13 +76,13 @@ Contribute
 
     .. grid-item-card::  Discussions
       :text-align: center
-      :link: https://github.com/tsutterley/gravity-toolkit/discussions
+      :link: https://github.com/polargeodesy/gravity-toolkit/discussions
 
       :material-outlined:`forum;5em`
 
     .. grid-item-card::  Issues
       :text-align: center
-      :link: https://github.com/tsutterley/gravity-toolkit/issues
+      :link: https://github.com/polargeodesy/gravity-toolkit/issues
 
       :material-outlined:`bug_report;5em`
 
