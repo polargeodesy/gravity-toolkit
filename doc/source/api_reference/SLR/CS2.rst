@@ -19,6 +19,6 @@ Calling Sequence
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/SLR/CS2.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/SLR/CS2.py
 
 .. autofunction:: gravity_toolkit.SLR.CS2

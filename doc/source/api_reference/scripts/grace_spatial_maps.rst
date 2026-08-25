@@ -9,7 +9,7 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/grace_spatial_maps.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/scripts/grace_spatial_maps.py
 
 Calling Sequence
 ################

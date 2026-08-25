@@ -6,7 +6,7 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/mascon_reconstruct.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/scripts/mascon_reconstruct.py
 
 Calling Sequence
 ################

@@ -7,7 +7,7 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/cnes_grace_sync.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/datasets/cnes_grace_sync.py
 
 Calling Sequence
 ################

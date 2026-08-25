@@ -8,7 +8,7 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/podaac_cumulus.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/datasets/podaac_cumulus.py
 
 Calling Sequence
 ################

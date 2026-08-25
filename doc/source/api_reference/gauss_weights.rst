@@ -15,7 +15,7 @@ Calling Sequence
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/gauss_weights.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/gauss_weights.py
 
 .. autofunction:: gravity_toolkit.gauss_weights
 
