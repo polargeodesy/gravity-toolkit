@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 """
 associated_legendre.py
-Written by Tyler Sutterley (08/2026)
+Written by Tyler Sutterley (09/2026)
 
 Computes fully-normalized associated Legendre Polynomials
 
 UPDATE HISTORY:
+    Updated 09/2026: check dimensions of input element x
     Updated 08/2026: use math notations for variables in docstrings
     Updated 03/2023: improve typing for variables in docstrings
     Updated 01/2023: refactored associated legendre polynomials
@@ -93,7 +94,8 @@ def plm_colombo(LMAX, x, MMAX=None, astype=np.float64):
     dplm: np.ndarray
         first derivative of Legendre polynomials
     """
-
+    # check dimensions of input elements
+    singular_values = np.ndim(x) == 0
     # removing singleton dimensions of x
     x = np.atleast_1d(x).flatten().astype(astype)
     # length of the x array
@@ -155,7 +157,11 @@ def plm_colombo(LMAX, x, MMAX=None, astype=np.float64):
 
     # return the legendre polynomials and their first derivative
     # truncating orders to MMAX
-    return plm[:, : MMAX + 1, :], dplm[:, : MMAX + 1, :]
+    # flattening to singular values if necessary
+    if singular_values:
+        return plm[:, : MMAX + 1, 0], dplm[:, : MMAX + 1, 0]
+    else:
+        return plm[:, : MMAX + 1, :], dplm[:, : MMAX + 1, :]
 
 
 def plm_holmes(LMAX, x, MMAX=None, astype=np.float64):
@@ -184,7 +190,8 @@ def plm_holmes(LMAX, x, MMAX=None, astype=np.float64):
     dplm: np.ndarray
         first derivative of Legendre polynomials
     """
-
+    # check dimensions of input elements
+    singular_values = np.ndim(x) == 0
     # removing singleton dimensions of x
     x = np.atleast_1d(x).flatten().astype(astype)
     # length of the x array
@@ -292,8 +299,11 @@ def plm_holmes(LMAX, x, MMAX=None, astype=np.float64):
 
     # return the legendre polynomials and their first derivative
     # truncating orders to MMAX
-    return plm[:, : MMAX + 1, :], dplm[:, : MMAX + 1, :]
-
+    # flattening to singular values if necessary
+    if singular_values:
+        return plm[:, : MMAX + 1, 0], dplm[:, : MMAX + 1, 0]
+    else:
+        return plm[:, : MMAX + 1, :], dplm[:, : MMAX + 1, :]
 
 def plm_mohlenkamp(LMAX, x, MMAX=None, astype=np.float64):
     r"""
@@ -323,7 +333,8 @@ def plm_mohlenkamp(LMAX, x, MMAX=None, astype=np.float64):
     dplm: np.ndarray
         first derivative of Legendre polynomials
     """
-
+    # check dimensions of input elements
+    singular_values = np.ndim(x) == 0
     # Verify LMAX as integer
     LMAX = np.int64(LMAX)
     # upper bound of spherical harmonic orders (default = LMAX)
@@ -398,4 +409,8 @@ def plm_mohlenkamp(LMAX, x, MMAX=None, astype=np.float64):
                     l * x * plm[l, mm, :] - flm * plm[l - 1, mm, :]
                 )
     # return the legendre polynomials and their first derivative
-    return plm, dplm
+    # flattening to singular values if necessary
+    if singular_values:
+        return plm[:, :, 0], dplm[:, :, 0]
+    else:
+        return plm, dplm

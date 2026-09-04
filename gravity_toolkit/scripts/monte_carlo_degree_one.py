@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 monte_carlo_degree_one.py
-Written by Tyler Sutterley (08/2026)
+Written by Tyler Sutterley (09/2026)
 
 Calculates degree 1 errors using GRACE coefficients of degree 2 and greater,
     and ocean bottom pressure variations from OMCT/MPIOM in a Monte Carlo scheme
@@ -157,6 +157,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 09/2026: little bit of clean up for readability
     Updated 08/2026: use default file logger for valid and failed program runs
     Updated 07/2026: use np.einsum for spherical harmonic summations
         can remove sets of harmonic files from the GRACE/GRACE-FO data
@@ -765,20 +766,16 @@ def monte_carlo_degree_one(
         for t in range(n_files):
             # calculate uncertainty for time t and each degree/order
             Ylms = gravtk.harmonics(lmax=LMAX, mmax=MMAX)
-            Ylms.clm = (
-                1.0 - 2.0 * np.random.rand(LMAX + 1, MMAX + 1)
-            ) * delta_Ylms.clm
-            Ylms.slm = (
-                1.0 - 2.0 * np.random.rand(LMAX + 1, MMAX + 1)
-            ) * delta_Ylms.slm
+            seed = np.random.rand(LMAX + 1, MMAX + 1)
+            Ylms.clm = (1.0 - 2.0 * seed) * delta_Ylms.clm
+            seed = np.random.rand(LMAX + 1, MMAX + 1)
+            Ylms.slm = (1.0 - 2.0 * seed) * delta_Ylms.slm
             # add additional uncertainty terms
             for eYlms in error_Ylms:
-                Ylms.clm += (
-                    1.0 - 2.0 * np.random.rand(LMAX + 1, MMAX + 1)
-                ) * eYlms.clm
-                Ylms.slm += (
-                    1.0 - 2.0 * np.random.rand(LMAX + 1, MMAX + 1)
-                ) * eYlms.slm
+                seed = np.random.rand(LMAX + 1, MMAX + 1)
+                Ylms.clm += (1.0 - 2.0 * seed) * eYlms.clm
+                seed = np.random.rand(LMAX + 1, MMAX + 1)
+                Ylms.slm += (1.0 - 2.0 * seed) * eYlms.slm
 
             # Removing monthly GIA signal, atmospheric correction
             # and the auxiliary coefficients

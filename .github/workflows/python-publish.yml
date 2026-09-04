@@ -9,6 +9,8 @@ on:
 
 jobs:
   deploy:
+    environment:
+      name: PyPI
 
     runs-on: ubuntu-latest
 

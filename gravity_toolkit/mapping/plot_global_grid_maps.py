@@ -196,7 +196,7 @@ def plot_grid(
         cmap = gravtk.tools.from_cpt(CPT_FILE)
     else:
         # colormap
-        cmap = copy.copy(cm.get_cmap(COLOR_MAP))
+        cmap = plt.get_cmap(COLOR_MAP).copy()
     # grey color map for bad values
     cmap.set_bad('lightgray', 1.0)
 

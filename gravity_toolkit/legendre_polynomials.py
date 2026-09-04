@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 legendre_polynomials.py
-Written by Tyler Sutterley (08/2026)
+Written by Tyler Sutterley (09/2026)
 
 Computes fully normalized Legendre polynomials for an array of x values
     and their first derivative
@@ -33,6 +33,7 @@ REFERENCES:
         http://www.springerlink.com/content/978-3-211-33544-4
 
 UPDATE HISTORY:
+    Updated 09/2026: check dimensions of input element x
     Updated 08/2026: fixes for typing error with numpy updates
     Updated 11/2024: add polar argument for x == +/-1 to prevent drift
     Updated 03/2023: improve typing for variables in docstrings
@@ -73,6 +74,8 @@ def legendre_polynomials(lmax, x, ASTYPE=np.float64):
     dpl: np.ndarray
         first derivative of Legendre polynomials
     """
+    # check dimensions of input elements
+    singular_values = np.ndim(x) == 0
     # verify dimensions
     x = np.atleast_1d(x).flatten().astype(ASTYPE)
     # size of the x array
@@ -114,4 +117,9 @@ def legendre_polynomials(lmax, x, ASTYPE=np.float64):
         dpl[l, :] = (1.0 / u) * (l * x * pl[l, :] - fl * pl[l - 1, :])
 
     # return the legendre polynomials and their first derivative
-    return (pl, dpl)
+    # flattened to singular values if necessary
+    if singular_values:
+        return (pl[:, 0], dpl[:, 0])
+    else:
+        return (pl, dpl)
+

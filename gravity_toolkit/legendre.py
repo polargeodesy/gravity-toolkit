@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 legendre.py
-Written by Tyler Sutterley (08/2026)
+Written by Tyler Sutterley (09/2026)
 Computes associated Legendre functions of degree l evaluated for elements x
 l must be a scalar integer and x must contain real values ranging -1 <= x <= 1
 Parallels the MATLAB legendre function
@@ -29,6 +29,7 @@ REFERENCES:
     J. A. Jacobs, "Geomagnetism", Academic Press, 1987, Ch.4.
 
 UPDATE HISTORY:
+    Updated 09/2026: check dimensions of input element x
     Updated 08/2026: fixes for typing error with numpy updates
     Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
@@ -69,6 +70,8 @@ def legendre(l, x, NORMALIZE=False):
     """
     # verify integer
     l = np.int64(l)
+    # check dimensions of input elements
+    singular_values = np.ndim(x) == 0
     # verify dimensions
     x = np.atleast_1d(x).flatten()
     # size of the x array
@@ -176,4 +179,8 @@ def legendre(l, x, NORMALIZE=False):
         Pl[l, :] *= np.prod(rootl[1:])
 
     # return the legendre polynomials
-    return Pl
+    # flattened to singular values if necessary
+    if singular_values:
+        return Pl[:, 0]
+    else:
+        return Pl

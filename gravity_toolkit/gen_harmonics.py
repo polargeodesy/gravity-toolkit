@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 gen_harmonics.py
-Written by Tyler Sutterley (07/2026)
+Written by Tyler Sutterley (09/2026)
 Converts data from the spatial domain to spherical harmonic coefficients
 Does not compute the solid Earth elastic response or convert units
 
@@ -47,6 +47,7 @@ REFERENCES:
         Associated Legendre Functions", Journal of Geodesy (2002)
 
 UPDATE HISTORY:
+    Updated 09/2026: allocate for and then fill output spherical harmonics
     Updated 07/2026: use np.einsum for spherical harmonic summations
         use np.radians to convert from degrees to radians
         added custom weighting function for gridded data
@@ -219,8 +220,8 @@ def integration(
     ylm = np.einsum('lmh...,mh...->lm...', plm, d)
     # convert to output normalization (4-pi normalized harmonics)
     # truncate to MMAX if specified (if l > MMAX)
-    Ylms.clm = coeff * ylm.real[: LMAX + 1, : MMAX + 1]
-    Ylms.slm = coeff * ylm.imag[: LMAX + 1, : MMAX + 1]
+    Ylms.clm[:, :] = coeff * ylm.real[: LMAX + 1, : MMAX + 1]
+    Ylms.slm[:, :] = coeff * ylm.imag[: LMAX + 1, : MMAX + 1]
     # return the output spherical harmonics object
     return Ylms
 
