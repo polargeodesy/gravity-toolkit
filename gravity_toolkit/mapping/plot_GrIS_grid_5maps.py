@@ -397,7 +397,7 @@ def plot_grid(
         cmap = gravtk.tools.from_cpt(CPT_FILE)
     else:
         # colormap
-        cmap = copy.copy(cm.get_cmap(COLOR_MAP))
+        cmap = plt.get_cmap(COLOR_MAP).copy()
 
     # if using MODIS mosaic of Greenland as basemap
     if BASEMAP:

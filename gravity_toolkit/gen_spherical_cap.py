@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 gen_spherical_cap.py
-Written by Tyler Sutterley (07/2026)
+Written by Tyler Sutterley (09/2026)
 Calculates gravitational spherical harmonic coefficients for a spherical cap
 
 Creating a spherical cap with generating angle alpha is a 2 step process:
@@ -61,6 +61,7 @@ REFERENCES:
         https://doi.org/10.1007/s00190-011-0522-7
 
 UPDATE HISTORY:
+    Updated 09/2026: allocate for and then fill output spherical harmonics
     Updated 07/2026: use np.einsum for spherical harmonic summations
         use np.radians to convert from degrees to radians
     Updated 06/2023: modified custom units case to not convert to cmwe
@@ -269,14 +270,16 @@ def gen_spherical_cap(
     plm = np.zeros((LMAX + 1, MMAX + 1))
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
+    Ylms.clm = np.zeros((LMAX + 1, MMAX + 1))
+    Ylms.slm = np.zeros((LMAX + 1, MMAX + 1))
     # rotate spherical cap to be centered at lat/lon
     plm = np.einsum('lm...,l...->lm...', PLM[: LMAX + 1, : MMAX + 1], pl_alpha)
     # multiplying clm by cos(m*phi) and slm by sin(m*phi)
     # to get a field of spherical harmonics
     ylm = np.einsum('lm...,m...->lm...', plm, d)
     # Multiplying by factors to convert to fully normalized coefficients
-    Ylms.clm = np.einsum('l...,lm...->lm...', dfactor, ylm.real)
-    Ylms.slm = np.einsum('l...,lm...->lm...', dfactor, ylm.imag)
+    Ylms.clm[:, :] = np.einsum('l...,lm...->lm...', dfactor, ylm.real)
+    Ylms.slm[:, :] = np.einsum('l...,lm...->lm...', dfactor, ylm.imag)
 
     # return the output spherical harmonics object
     return Ylms

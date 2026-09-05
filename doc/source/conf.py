@@ -29,7 +29,7 @@ on_github = os.environ.get('GITHUB_ACTIONS') == 'true'
 metadata = importlib.metadata.metadata('gravity-toolkit')
 project = metadata['Name']
 year = datetime.date.today().year
-copyright = f'2019\u2013{year}, Tyler C. Sutterley'
+copyright = f'2019\u2013{year}, {project} Developers'
 author = 'Tyler C. Sutterley'
 
 # The full version, including alpha/beta/rc tags
