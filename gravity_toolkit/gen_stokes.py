@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 gen_stokes.py
-Written by Tyler Sutterley (07/2026)
+Written by Tyler Sutterley (09/2026)
 
 Converts data from the spatial domain to spherical harmonic coefficients
 
@@ -44,6 +44,7 @@ PROGRAM DEPENDENCIES:
         and filters the GRACE/GRACE-FO coefficients for striping errors
 
 UPDATE HISTORY:
+    Updated 09/2026: allocate for and then fill output spherical harmonics
     Updated 07/2026: use np.einsum for spherical harmonic summations
         use np.radians to convert from degrees to radians
         added custom weighting function for gridded data
@@ -211,6 +212,8 @@ def gen_stokes(
 
     # Initializing output spherical harmonic matrices
     Ylms = gravity_toolkit.harmonics(lmax=LMAX, mmax=MMAX)
+    Ylms.clm = np.zeros((LMAX + 1, MMAX + 1))
+    Ylms.slm = np.zeros((LMAX + 1, MMAX + 1))
     # Multiplying gridded data with sin/cos of m#phis
     # This will sum through all phis in the dot product
     # output [m,theta]
@@ -218,8 +221,8 @@ def gen_stokes(
     # Summing product of plms and data over all latitudes
     ylm = np.einsum('lmh...,mh...->lm...', plm, d)
     # Multiplying by factors to convert to fully normalized coefficients
-    Ylms.clm = np.einsum('l...,lm...->lm...', dfactor, ylm.real)
-    Ylms.slm = np.einsum('l...,lm...->lm...', dfactor, ylm.imag)
+    Ylms.clm[:, :] = np.einsum('l...,lm...->lm...', dfactor, ylm.real)
+    Ylms.slm[:, :] = np.einsum('l...,lm...->lm...', dfactor, ylm.imag)
 
     # return the output spherical harmonics object
     return Ylms
