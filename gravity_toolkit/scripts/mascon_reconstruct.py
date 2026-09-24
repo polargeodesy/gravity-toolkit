@@ -167,8 +167,6 @@ def mascon_reconstruct(
     OUTPUT_DIRECTORY = pathlib.Path(OUTPUT_DIRECTORY).expanduser().absolute()
     if not OUTPUT_DIRECTORY.exists():
         OUTPUT_DIRECTORY.mkdir(mode=MODE, parents=True, exist_ok=True)
-    # list object of output files for file logs (full path)
-    output_files = []
 
     # for datasets not GSM: will add a label for the dataset
     dset_str = '' if (DSET == 'GSM') else f'_{DSET}'
@@ -288,27 +286,22 @@ def mascon_reconstruct(
             END,
             suffix[DATAFORM],
         )
-        OUTPUT_FILE = OUTPUT_DIRECTORY.joinpath(file_format.format(*args))
+        output_file = OUTPUT_DIRECTORY.joinpath(file_format.format(*args))
         # attributes for output files
         attributes = {}
         attributes['reference'] = (
             f'Output from {pathlib.Path(sys.argv[0]).name}'
         )
         # output harmonics to file
-        mascon_Ylms.to_file(OUTPUT_FILE, format=DATAFORM, **attributes)
+        mascon_Ylms.to_file(output_file, format=DATAFORM, **attributes)
         # print file name to index
-        print(mascon_Ylms.compressuser(OUTPUT_FILE), file=fid)
+        print(mascon_Ylms.compressuser(output_file), file=fid)
         # change the permissions mode
-        OUTPUT_FILE.chmod(mode=MODE)
-        # add file to list
-        output_files.append(OUTPUT_FILE)
+        output_file.chmod(mode=MODE)
     # close the reconstruct index
     fid.close()
     # change the permissions mode of the index file
     RECONSTRUCT_FILE.chmod(mode=MODE)
-
-    # return the list of output files
-    return output_files
 
 
 # PURPOSE: create argument parser
@@ -471,15 +464,6 @@ def arguments():
         default=lsmask,
         help='Land-sea mask for redistributing mascon mass',
     )
-    # Output log file for each job in forms
-    # validrun_2002-04-01T00:00:00_PID-00000.log
-    # failedrun_2002-04-01T00:00:00_PID-00000.log
-    parser.add_argument(
-        '--log',
-        default=False,
-        action='store_true',
-        help='Output log file for each job',
-    )
     # print information about processing run
     parser.add_argument(
         '--verbose',
@@ -516,7 +500,7 @@ def main():
     try:
         info(args)
         # run mascon_reconstruct algorithm with parameters
-        output_files = mascon_reconstruct(
+        mascon_reconstruct(
             args.product,
             args.lmax,
             args.radius,
@@ -543,22 +527,6 @@ def main():
         # current exception being handled
         logger.critical(f'process id {os.getpid():d} failed')
         logger.error(traceback.format_exc())
-        if args.log:  # write failed job completion log file
-            logfile = gravtk.utilities.create_log_file(
-                'failedrun',
-                filename=pathlib.Path(sys.argv[0]).name,
-                arguments=vars(args),
-            )
-            logger.info(logfile)
-    else:
-        if args.log:  # write successful job completion log file
-            logfile = gravtk.utilities.create_log_file(
-                'validrun',
-                filename=pathlib.Path(sys.argv[0]).name,
-                arguments=vars(args),
-                output=output_files,
-            )
-            logger.info(logfile)
 
 
 # run main program

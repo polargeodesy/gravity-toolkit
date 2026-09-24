@@ -6,7 +6,7 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/make_grace_index.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/scripts/make_grace_index.py
 
 Calling Sequence
 ################

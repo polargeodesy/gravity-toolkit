@@ -6,6 +6,6 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/time_series/lomb_scargle.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/time_series/lomb_scargle.py
 
 .. autofunction:: gravity_toolkit.time_series.lomb_scargle

@@ -6,6 +6,6 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/time_series/fit.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/time_series/fit.py
 
 .. autofunction:: gravity_toolkit.time_series.aliasing_terms

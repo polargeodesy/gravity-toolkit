@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 lomb_scargle.py
-Written by Tyler Sutterley (06/2024)
+Written by Tyler Sutterley (08/2026)
 
 Wrapper function for computing Lomb-Scargle periodograms
 
@@ -49,6 +49,7 @@ REFERENCES:
         https://doi.org/10.1086/164037
 
 UPDATE HISTORY:
+    Updated 08/2026: change assertions to value errors
     Updated 06/2024: add function docstrings
     Updated 01/2015: added centroid output
     Written 08/2013
@@ -126,7 +127,8 @@ def lomb_scargle(t_in, d_in, **kwargs):
 
     # number of angular frequencies
     N = int(kwargs['N'])
-    assert len(OMEGA) == 2, 'Angular frequency range must have 2 values'
+    if len(OMEGA) != 2:
+        raise ValueError('Angular frequency range must have 2 values')
     # array of angular frequencies
     angular_freq = np.linspace(OMEGA[0], OMEGA[1], N)
 

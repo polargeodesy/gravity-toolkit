@@ -14,6 +14,6 @@ Calling Sequence
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/gen_averaging_kernel.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/gen_averaging_kernel.py
 
 .. autofunction:: gravity_toolkit.gen_averaging_kernel

@@ -2,7 +2,7 @@
 """
 gauss_weights.py
 Original IDL code gauss_weights.pro written by Sean Swenson
-Adapted by Tyler Sutterley (03/2023)
+Adapted by Tyler Sutterley (08/2026)
 
 Computes the Gaussian weights as a function of degree
 A normalized version of Jekeli's Gaussian averaging function
@@ -38,6 +38,7 @@ NOTES:
             alpha = alog(2.)/(1.-cos(rad/6371.))
 
 UPDATE HISTORY:
+    Updated 08/2026: add gauss_kernel function for averaging kernel routines
     Updated 03/2023: improve typing for variables in docstrings
     Updated 04/2022: updated docstrings to numpy documentation format
     Updated 09/2021: added option for setting minimum value threshold
@@ -59,9 +60,9 @@ def gauss_weights(hw, LMAX, CUTOFF=1e-10):
     Parameters
     ----------
     hw: float
-        Gaussian smoothing radius in kilometers
+        Gaussian smoothing radius (km)
     LMAX: int
-        Maximum degree of spherical harmonic coefficients
+        maximum degree of spherical harmonic coefficients
     CUTOFF: float, default 1e-10
         minimum value for tail of Gaussian averaging function
 
@@ -70,38 +71,84 @@ def gauss_weights(hw, LMAX, CUTOFF=1e-10):
     wl: np.ndarray
         degree dependent weighting function
     """
+    # check if distance is smaller than cutoff
+    if hw < CUTOFF:
+        wl = 1.0 / (2.0 * np.pi)
+        return wl
     # allocate for output weights
     wl = np.zeros((LMAX + 1))
     # radius of the Earth in km
     rad_e = 6371.0
-    if hw < CUTOFF:
-        # distance is smaller than cutoff
-        wl[:] = 1.0 / (2.0 * np.pi)
-    else:
-        # calculate gaussian weights using recursion
-        b = np.log(2.0) / (1.0 - np.cos(hw / rad_e))
-        # weight for degree 0
-        wl[0] = 1.0 / (2.0 * np.pi)
-        # weight for degree 1
-        wl[1] = wl[0] * (
-            (1.0 + np.exp(-2.0 * b)) / (1.0 - np.exp(-2.0 * b)) - 1.0 / b
-        )
-        # valid flag
-        valid = True
-        # spherical harmonic degree
-        l = 2
-        # while valid (within cutoff)
-        # and spherical harmonic degree is less than LMAX
-        while valid and (l <= LMAX):
-            # calculate weight with recursion
-            wl[l] = (1.0 - 2.0 * l) / b * wl[l - 1] + wl[l - 2]
-            # weight is less than cutoff
-            if wl[l] < CUTOFF:
-                # set all weights to cutoff
-                wl[l : LMAX + 1] = CUTOFF
-                # set valid flag
-                valid = False
-            # add 1 to l
-            l += 1
+    # calculate gaussian weights using recursion
+    b = np.log(2.0) / (1.0 - np.cos(hw / rad_e))
+    # weight for degree 0
+    wl[0] = 1.0 / (2.0 * np.pi)
+    # weight for degree 1
+    wl[1] = wl[0] * (
+        (1.0 + np.exp(-2.0 * b)) / (1.0 - np.exp(-2.0 * b)) - 1.0 / b
+    )
+    # valid flag
+    valid = True
+    # spherical harmonic degree
+    l = 2
+    # while valid (within cutoff)
+    # and spherical harmonic degree is less than LMAX
+    while valid and (l <= LMAX):
+        # calculate weight with recursion
+        wl[l] = (1.0 - 2.0 * l) / b * wl[l - 1] + wl[l - 2]
+        # weight is less than cutoff
+        if wl[l] < CUTOFF:
+            # set all weights to cutoff
+            wl[l : LMAX + 1] = CUTOFF
+            # set valid flag
+            valid = False
+        # add 1 to l
+        l += 1
     # return the gaussian weights
     return wl
+
+
+def gauss_kernel(hw, LMAX, CUTOFF=1e-15):
+    """
+    Computes the Legendre coefficients of a Gaussian correlation
+    function :cite:p:`Jekeli:1981vj,Swenson:2002hs`
+
+    Parameters
+    ----------
+    hw: float
+        half-width of the Gaussian kernel (km)
+    LMAX: int
+        maximum degree of spherical harmonic coefficients
+    CUTOFF: float, default 1e-15
+        minimum value for tail of Gaussian kernel
+
+    Returns
+    -------
+    wl: np.ndarray
+        degree dependent weighting function
+    """
+    # radius of the Earth in km
+    rad_e = 6371.0
+    # valid flag
+    valid = True
+    # allocate for gaussian function
+    gl = np.zeros((LMAX + 1))
+    # calculate gaussian kernel using recursion
+    b = np.log(2.0) / (1.0 - np.cos(hw / rad_e))
+    # weight for degree 0
+    gl[0] = (1.0 - np.exp(-2.0 * b)) / b
+    # weight for degree 1
+    gl[1] = (1.0 + np.exp(-2.0 * b)) / b - (1.0 - np.exp(-2.0 * b)) / b**2
+    # seed for other spherical harmonic degrees
+    l = 2
+    # generate Legendre coefficients of Gaussian correlation function
+    while valid and (l <= LMAX):
+        gl[l] = (1.0 - 2.0 * l) / b * gl[l - 1] + gl[l - 2]
+        # check validity
+        if gl[l] < CUTOFF:
+            gl[l : LMAX + 1] = CUTOFF
+            valid = False
+        # add to counter for spherical harmonic degree
+        l += 1
+    # return the gaussian function
+    return gl

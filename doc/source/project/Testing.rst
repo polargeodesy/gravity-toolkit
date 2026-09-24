@@ -55,8 +55,8 @@ To run in series and disable parallelization, set the number of processes to 0:
 
 Continuous Integration
 ^^^^^^^^^^^^^^^^^^^^^^
-We use `GitHub Actions <https://github.com/tsutterley/gravity-toolkit/actions>`_ continuous integration (CI) services to build and test the project on Linux (``ubuntu-latest``), Mac (``macos-latest``) and Windows (``windows-latest``) Operating Systems.
-The configuration files for this service are in the `GitHub workflows <https://github.com/tsutterley/gravity-toolkit/tree/main/.github/workflows>`_ directory.
+We use `GitHub Actions <https://github.com/polargeodesy/gravity-toolkit/actions>`_ continuous integration (CI) services to build and test the project on Linux (``ubuntu-latest``), Mac (``macos-latest``) and Windows (``windows-latest``) Operating Systems.
+The configuration files for this service are in the `GitHub workflows <https://github.com/polargeodesy/gravity-toolkit/tree/main/.github/workflows>`_ directory.
 The workflows use ``pixi`` to install the required dependencies and build the custom environment.
 
 The GitHub Actions jobs include:

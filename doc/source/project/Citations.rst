@@ -54,7 +54,7 @@ Optional Dependencies
 
 - `cartopy: Python package designed for geospatial data processing <https://scitools.org.uk/cartopy/docs/latest/>`_
 - `dask: Parallel computing with task scheduling <https://www.dask.org/>`_
-- `geoid-toolkit: Python utilities for calculating geoid heights from static gravity field coefficients <https://github.com/tsutterley/geoid-toolkit/>`_
+- `geoid-toolkit: Python utilities for calculating geoid heights from static gravity field coefficients <https://github.com/polargeodesy/geoid-toolkit/>`_
 - `gdal: Pythonic interface to the Geospatial Data Abstraction Library (GDAL) <https://pypi.python.org/pypi/GDAL>`_
 - `h5py: Python interface for Hierarchal Data Format 5 (HDF5) <https://www.h5py.org/>`_
 - `ipywidgets: interactive HTML widgets for Jupyter notebooks and IPython <https://ipywidgets.readthedocs.io/en/latest/>`_

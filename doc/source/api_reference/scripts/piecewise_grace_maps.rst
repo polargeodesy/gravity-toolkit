@@ -6,7 +6,7 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/scripts/piecewise_grace_maps.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/scripts/piecewise_grace_maps.py
 
 Calling Sequence
 ################
