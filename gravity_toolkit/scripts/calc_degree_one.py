@@ -4,7 +4,7 @@ calc_degree_one.py
 Written by Tyler Sutterley (08/2026)
 
 Calculates degree 1 variations using GRACE coefficients of degree 2 and greater,
-    and ocean bottom pressure variations from ECCO and OMCT/MPIOM
+    and modeled ocean bottom pressure variations
 
 Relation between Geocenter Motion in mm and Normalized Geoid Coefficients
     X = sqrt(3)*a*C11
@@ -177,6 +177,7 @@ REFERENCES:
 
 UPDATE HISTORY:
     Updated 08/2026: use default file logger for valid and failed program runs
+        moved seasonal land water degree-1 model to geocenter class
     Updated 07/2026: use np.einsum for spherical harmonic summations
         can remove sets of harmonic files from the GRACE/GRACE-FO data
         use np.radians to convert from degrees to radians
@@ -375,43 +376,6 @@ def load_AOD(base_dir, PROC, DREL, DSET, START, END, MISSING, LMAX):
     )
     # returning input variables as a harmonics object
     return gravtk.harmonics().from_dict(grace_Ylms)
-
-
-# PURPOSE: model the seasonal component of an initial degree 1 model
-# using preliminary estimates of annual and semi-annual variations from LWM
-# as calculated in Chen et al. (1999), doi:10.1029/1998JB900019
-# NOTE: this is to get an accurate assessment of the land water mass for the
-# eustatic component (not for the ocean component from GRACE)
-def model_seasonal_geocenter(grace_date):
-    # Annual amplitudes of (Soil Moisture + Snow) geocenter components (mm)
-    AAx = 1.28
-    AAy = 0.52
-    AAz = 3.30
-    # Annual phase of (Soil Moisture + Snow) geocenter components (degrees)
-    APx = 44.0
-    APy = 182.0
-    APz = 43.0
-    # Semi-Annual amplitudes of (Soil Moisture + Snow) geocenter components
-    SAAx = 0.15
-    SAAy = 0.56
-    SAAz = 0.50
-    # Semi-Annual phase of (Soil Moisture + Snow) geocenter components
-    SAPx = 331.0
-    SAPy = 312.0
-    SAPz = 75.0
-    # calculate each geocenter component from the amplitude and phase
-    # converting the phase from degrees to radians
-    X = AAx * np.sin(
-        2.0 * np.pi * grace_date + np.radians(APx)
-    ) + SAAx * np.sin(4.0 * np.pi * grace_date + np.radians(SAPx))
-    Y = AAy * np.sin(
-        2.0 * np.pi * grace_date + np.radians(APy)
-    ) + SAAy * np.sin(4.0 * np.pi * grace_date + np.radians(SAPy))
-    Z = AAz * np.sin(
-        2.0 * np.pi * grace_date + np.radians(APz)
-    ) + SAAz * np.sin(4.0 * np.pi * grace_date + np.radians(SAPz))
-    DEG1 = gravtk.geocenter(X=X - X.mean(), Y=Y - Y.mean(), Z=Z - Z.mean())
-    return DEG1.from_cartesian()
 
 
 # PURPOSE: calculate a geocenter time-series
@@ -637,7 +601,7 @@ def calc_degree_one(
     GAD_Ylms.mean(apply=True)
     GAC_Ylms.mean(apply=True)
     # convert GAC to geocenter object
-    GAC = gravtk.geocenter().from_harmonics(GAC_Ylms)
+    GAC = gravtk.geocenter.from_harmonics(GAC_Ylms)
     # filter GRACE/GRACE-FO coefficients
     if DESTRIPE:
         # destriping GRACE GSM and GAD coefficients
@@ -666,7 +630,7 @@ def calc_degree_one(
     GIA_Ylms = GIA_Ylms_rate.drift(GSM_Ylms.time, epoch=2003.3)
     GIA_Ylms.month[:] = np.copy(GSM_Ylms.month)
     # save geocenter coefficients of monthly GIA variability
-    gia = gravtk.geocenter().from_harmonics(GIA_Ylms)
+    gia = gravtk.geocenter.from_harmonics(GIA_Ylms)
 
     # GRACE GAD degree 1
     GAD = gravtk.geocenter()
@@ -704,7 +668,7 @@ def calc_degree_one(
     # truncate to degree and order LMAX/MMAX
     ATM_Ylms = ATM_Ylms.truncate(lmax=LMAX, mmax=MMAX)
     # save geocenter coefficients of the atmospheric jump corrections
-    atm = gravtk.geocenter().from_harmonics(ATM_Ylms)
+    atm = gravtk.geocenter.from_harmonics(ATM_Ylms)
 
     # read bottom pressure model if applicable
     if MODEL not in ('OMCT', 'MPIOM'):
@@ -775,7 +739,7 @@ def calc_degree_one(
             # redistributing the mass over the ocean if specified
             remove_Ylms.add(Ylms)
     # save geocenter coefficients of the auxiliary corrections
-    remove = gravtk.geocenter().from_harmonics(remove_Ylms)
+    remove = gravtk.geocenter.from_harmonics(remove_Ylms)
 
     # Calculating cos/sin of phi arrays
     # output [m,phi]
@@ -841,7 +805,7 @@ def calc_degree_one(
 
     # get seasonal variations of an initial geocenter correction
     # for use in the land water mass calculation
-    seasonal_geocenter = model_seasonal_geocenter(tdec)
+    seasonal_geocenter = gravtk.geocenter.land_seasonal(tdec)
 
     # iterate solutions: if not single iteration
     n_iter = 0
@@ -1661,14 +1625,12 @@ def print_global(fid, PROC, DREL, MODEL, AOD, GIA, SLR, S21, month):
     fid.write('    {0:22}: {1}\n'.format('creator_institution', inst))
     # date range and date created
     calendar_year, calendar_month = gravtk.time.grace_to_calendar(month)
-    start_time = '{0:4.0f}-{1:02.0f}'.format(
-        calendar_year[0], calendar_month[0]
-    )
+    start_time = f'{calendar_year[0]:4.0f}-{calendar_month[0]:02.0f}'
     fid.write('    {0:22}: {1}\n'.format('time_coverage_start', start_time))
-    end_time = '{0:4.0f}-{1:02.0f}'.format(
-        calendar_year[-1], calendar_month[-1]
-    )
+    end_time = f'{calendar_year[-1]:4.0f}-{calendar_month[-1]:02.0f}'
     fid.write('    {0:22}: {1}\n'.format('time_coverage_end', end_time))
+    duration = f'{month[-1] - month[0]:02.0f} months'
+    fid.write('    {0:22}: {1}\n'.format('time_coverage_duration', duration))
     today = time.strftime('%Y-%m-%d', time.localtime())
     fid.write('    {0:22}: {1}\n'.format('date_created', today))
     fid.write('\n')

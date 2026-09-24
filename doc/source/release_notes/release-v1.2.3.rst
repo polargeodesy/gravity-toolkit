@@ -7,4 +7,4 @@
 * ``chore``: bump version to ``1.2.3``
 * ``fix``: update ``MANIFEST.in`` to include version and requirements
 
-.. __: https://github.com/tsutterley/gravity-toolkit/releases/tag/1.2.3
+.. __: https://github.com/polargeodesy/gravity-toolkit/releases/tag/1.2.3

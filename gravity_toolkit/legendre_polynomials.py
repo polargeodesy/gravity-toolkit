@@ -122,4 +122,3 @@ def legendre_polynomials(lmax, x, ASTYPE=np.float64):
         return (pl[:, 0], dpl[:, 0])
     else:
         return (pl, dpl)
-

@@ -10,7 +10,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
     <td>
         <a href="https://pypi.python.org/pypi/gravity-toolkit/" alt="PyPI"><img src="https://img.shields.io/pypi/v/gravity-toolkit.svg"></a>
         <a href="https://anaconda.org/conda-forge/gravity-toolkit" alt="conda-forge"><img src="https://img.shields.io/conda/vn/conda-forge/gravity-toolkit"></a>
-        <a href="https://github.com/tsutterley/gravity-toolkit/releases/latest" alt="commits-since"><img src="https://img.shields.io/github/commits-since/tsutterley/gravity-toolkit/latest"></a>
+        <a href="https://github.com/polargeodesy/gravity-toolkit/releases/latest" alt="commits-since"><img src="https://img.shields.io/github/commits-since/polargeodesy/gravity-toolkit/latest"></a>
     </td>
   </tr>
   <tr>
@@ -23,8 +23,8 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
     <td><b>Tests:</b></td>
     <td>
         <a href="https://gravity-toolkit.readthedocs.io/en/latest/?badge=latest" alt="Documentation Status"><img src="https://readthedocs.org/projects/gravity-toolkit/badge/?version=latest"></a>
-        <a href="https://github.com/tsutterley/gravity-toolkit/actions/workflows/python-request.yml" alt="Build"><img src="https://github.com/tsutterley/gravity-toolkit/actions/workflows/python-request.yml/badge.svg"></a>
-        <a href="https://github.com/tsutterley/gravity-toolkit/actions/workflows/ruff-format.yml" alt="Ruff"><img src="https://github.com/tsutterley/gravity-toolkit/actions/workflows/ruff-format.yml/badge.svg"></a>
+        <a href="https://github.com/polargeodesy/gravity-toolkit/actions/workflows/python-request.yml" alt="Build"><img src="https://github.com/polargeodesy/gravity-toolkit/actions/workflows/python-request.yml/badge.svg"></a>
+        <a href="https://github.com/polargeodesy/gravity-toolkit/actions/workflows/ruff-format.yml" alt="Ruff"><img src="https://github.com/polargeodesy/gravity-toolkit/actions/workflows/ruff-format.yml/badge.svg"></a>
     </td>
   </tr>
   <tr>
@@ -37,7 +37,7 @@ Python tools for obtaining and working with Level-2 spherical harmonic coefficie
   <tr>
     <td><b>License:</b></td>
     <td>
-        <a href="https://github.com/tsutterley/gravity-toolkit/blob/main/LICENSE" alt="License"><img src="https://img.shields.io/github/license/tsutterley/gravity-toolkit"></a>
+        <a href="https://github.com/polargeodesy/gravity-toolkit/blob/main/LICENSE" alt="License"><img src="https://img.shields.io/github/license/polargeodesy/gravity-toolkit"></a>
     </td>
   </tr>
 </table>
@@ -71,7 +71,7 @@ mamba install -c conda-forge gravity-toolkit
 Development version from GitHub:
 
 ```bash
-python3 -m pip install git+https://github.com/tsutterley/gravity-toolkit.git
+python3 -m pip install git+https://github.com/polargeodesy/gravity-toolkit.git
 ```
 
 ### Running with Pixi
@@ -82,7 +82,7 @@ Alternatively, you can use [Pixi](https://pixi.sh/) for a streamlined workspace 
 2. Clone the project repository:
 
 ```bash
-git clone https://github.com/tsutterley/gravity-toolkit.git
+git clone https://github.com/polargeodesy/gravity-toolkit.git
 ```
 
 3. Move into the `gravity-toolkit` directory
@@ -125,10 +125,10 @@ This will automatically create the environment, install all dependencies, and la
 ## Download
 
 The program homepage is:  
-<https://github.com/tsutterley/gravity-toolkit>
+<https://github.com/polargeodesy/gravity-toolkit>
 
 A zip archive of the latest version is available directly at:  
-<https://github.com/tsutterley/gravity-toolkit/archive/main.zip>
+<https://github.com/polargeodesy/gravity-toolkit/archive/main.zip>
 
 ## Disclaimer
 
@@ -141,7 +141,7 @@ The software is provided here for your convenience but *with no guarantees whats
 ## Contributing
 
 This project contains work and contributions from the [scientific community](./CONTRIBUTORS.md).
-If you would like to contribute to the project, please have a look at the [contribution guidelines](./doc/source/getting_started/Contributing.rst), [open issues](https://github.com/tsutterley/gravity-toolkit/issues) and [discussions board](https://github.com/tsutterley/gravity-toolkit/discussions).
+If you would like to contribute to the project, please have a look at the [contribution guidelines](./doc/source/getting_started/Contributing.rst), [open issues](https://github.com/polargeodesy/gravity-toolkit/issues) and [discussions board](https://github.com/polargeodesy/gravity-toolkit/discussions).
 
 ## References
 

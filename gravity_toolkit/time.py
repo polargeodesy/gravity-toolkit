@@ -15,6 +15,7 @@ PYTHON DEPENDENCIES:
 UPDATE HISTORY:
     Updated 08/2026: output numpy.datetime64 objects from file parsers
         added astype option to calendar_days function (can now be int)
+        change assertions to value errors
     Updated 07/2026: added function to convert times to numpy datetimes
     Updated 06/2024: remove timescale class and leap second calculations
     Updated 06/2023: add timescale class for converting between time scales
@@ -226,7 +227,8 @@ def to_datetime(timedelta: np.ndarray, attributes: str, unit: str = 's'):
         ``numpy.datetime64`` array
     """
     # verify that units are numpy datetime compatible
-    assert unit in ['D', 'h', 'm', 's', 'ms', 'us', 'ns']
+    if unit not in ['D', 'h', 'm', 's', 'ms', 'us', 'ns']:
+        raise ValueError(f'Invalid unit: {unit}')
     # get the epoch and units from the attributes
     epoch, to_secs = parse_date_string(attributes)
     # convert epoch to datetime variable

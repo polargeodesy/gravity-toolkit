@@ -7,7 +7,7 @@
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/esa_costg_swarm_sync.py
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/datasets/esa_costg_swarm_sync.py
 
 Calling Sequence
 ################

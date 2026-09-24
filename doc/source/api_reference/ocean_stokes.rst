@@ -16,7 +16,7 @@ Calling Sequence
 
 `Source code`__
 
-.. __: https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/ocean_stokes.py)
+.. __: https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/ocean_stokes.py)
 
 .. autofunction:: gravity_toolkit.ocean_stokes
 

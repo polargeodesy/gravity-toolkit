@@ -85,13 +85,13 @@ Steps to Get Started
 ####################
 
 - `Register at NASA Earthdata <./NASA-Earthdata.html>`_
-- Run `podaac_cumulus.py <https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/podaac_cumulus.py>`_ program with your NASA Earthdata credentials to acquire GRACE/GRACE-FO and auxiliary data
+- Run `podaac_cumulus.py <https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/datasets/podaac_cumulus.py>`_ program with your NASA Earthdata credentials to acquire GRACE/GRACE-FO and auxiliary data
 
 .. code-block:: bash
 
     python podaac_cumulus.py --user=<username> --directory=<path_to_grace_directory> --release RL06
 
-- Run `cnes_grace_sync.py <https://github.com/tsutterley/gravity-toolkit/blob/main/gravity_toolkit/datasets/cnes_grace_sync.py>`_ program to acquire CNES/GRGS GRACE/GRACE-FO data
+- Run `cnes_grace_sync.py <https://github.com/polargeodesy/gravity-toolkit/blob/main/gravity_toolkit/datasets/cnes_grace_sync.py>`_ program to acquire CNES/GRGS GRACE/GRACE-FO data
 
 .. code-block:: bash
 
