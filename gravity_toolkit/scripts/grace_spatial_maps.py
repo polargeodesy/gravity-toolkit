@@ -486,16 +486,16 @@ def grace_spatial_maps(
     attributes['earth_density'] = f'{factors.rho_e:0.3f} g/cm^3'
     attributes['earth_gravity_constant'] = f'{factors.GM:0.3f} cm^3/s^2'
     # add geospatial attributes
-    attributes['ROOT']['geospatial_lat_min'] = grid.lat.min()
-    attributes['ROOT']['geospatial_lat_max'] = grid.lat.max()
-    attributes['ROOT']['geospatial_lon_min'] = grid.lon.min()
-    attributes['ROOT']['geospatial_lon_max'] = grid.lon.max()
-    attributes['ROOT']['geospatial_lat_units'] = 'degrees_north'
-    attributes['ROOT']['geospatial_lon_units'] = 'degrees_east'
+    attributes['geospatial_lat_min'] = grid.lat.min()
+    attributes['geospatial_lat_max'] = grid.lat.max()
+    attributes['geospatial_lon_min'] = grid.lon.min()
+    attributes['geospatial_lon_max'] = grid.lon.max()
+    attributes['geospatial_lat_units'] = 'degrees_north'
+    attributes['geospatial_lon_units'] = 'degrees_east'
     # add temporal attributes
-    attributes['ROOT']['time_coverage_start'] = np.datetime_as_string(SD)
-    attributes['ROOT']['time_coverage_end'] = np.datetime_as_string(ED)
-    attributes['ROOT']['time_coverage_duration'] = str(ED - SD)
+    attributes['time_coverage_start'] = np.datetime_as_string(SD)
+    attributes['time_coverage_end'] = np.datetime_as_string(ED)
+    attributes['time_coverage_duration'] = str(ED - SD)
     # add attributes to output spatial object
     attributes['reference'] = f'Output from {pathlib.Path(sys.argv[0]).name}'
     grid.attributes['ROOT'] = attributes
