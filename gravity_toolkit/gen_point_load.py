@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 gen_point_load.py
-Written by Tyler Sutterley (07/2026)
+Written by Tyler Sutterley (09/2026)
 Calculates gravitational spherical harmonic coefficients for point masses
 
 CALLING SEQUENCE:
@@ -47,6 +47,7 @@ REFERENCES:
         https://doi.org/10.1029/JB078i011p01760
 
 UPDATE HISTORY:
+    Updated 09/2026: convert back to just using np.sum for the summations
     Updated 07/2026: use np.einsum for spherical harmonic summations
         use np.radians to convert from degrees to radians
     Updated 04/2023: allow love numbers to be None for custom units case
@@ -182,6 +183,6 @@ def _complex_harmonics(l, data, phi, theta, coeff):
     # reshape data to (order, points)
     D = np.kron(np.ones((l + 1, 1)), data[np.newaxis, :])
     # calculate spherical harmonics summing over all points
-    Yl = np.einsum('mp...,mp...,mp...->m...', D, Pl, m_phi)
+    Yl = np.sum(D * Pl * m_phi, axis=1)
     # return harmonics for degree l multiplied by coefficients
     return coeff * Yl
