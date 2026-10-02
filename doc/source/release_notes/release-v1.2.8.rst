@@ -25,5 +25,6 @@
 * ``refactor``: format ``pyproject.toml`` with ``taplo`` `(#196) <https://github.com/polargeodesy/gravity-toolkit/pull/196>`_
 * ``fix``: root attributes for spatial output `(#197) <https://github.com/polargeodesy/gravity-toolkit/pull/197>`_
 * ``fix``: convert back to just using ``np.sum`` for point loads `(#199) <https://github.com/polargeodesy/gravity-toolkit/pull/199>`_
+* ``feat``: add options to use ridge regression with tunable lambda `(#201) <https://github.com/polargeodesy/gravity-toolkit/pull/201>`_
 
 .. __: https://github.com/polargeodesy/gravity-toolkit/releases/tag/1.2.8
