@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 calc_mascon.py
-Written by Tyler Sutterley (08/2026)
+Written by Tyler Sutterley (10/2026)
 
 Calculates a time-series of regional mass anomalies through a least-squares
     mascon procedure from GRACE/GRACE-FO time-variable gravity data
@@ -99,6 +99,8 @@ COMMAND LINE OPTIONS:
         gelsy: complete orthogonal factorization
         gelss: singular value decomposition (SVD)
         gelsd: singular value decomposition (SVD) with divide and conquer method
+        ridge: ridge regression with tunable lambda
+    --ridge-lambda X: ridge regression parameter for the least squares solver
     --remove-file X: Monthly files to be removed from the GRACE/GRACE-FO data
     --remove-format X: Input data format for files to be removed
         ascii
@@ -166,6 +168,7 @@ REFERENCES:
         https://doi.org/10.1029/2005GL025305
 
 UPDATE HISTORY:
+    Updated 10/2026: add options to use ridge regression with tunable lambda
     Updated 08/2026: use default file logger for valid and failed program runs
     Updated 05/2023: use pathlib to define and operate on paths
     Updated 04/2023: add options for least-squares solver
@@ -314,6 +317,7 @@ def calc_mascon(
     REDISTRIBUTE_MASCONS=False,
     FIT_METHOD=0,
     SOLVER=None,
+    RIDGE_LAMBDA=0,
     REMOVE_FILES=None,
     REMOVE_FORMAT=None,
     REDISTRIBUTE_REMOVED=False,
@@ -711,7 +715,7 @@ def calc_mascon(
     elif FIT_METHOD == 2:
         # Fitting Sensitivity Kernel as geoid coefficients
         for i in range(n_harm):
-            MA_lm[:, :] = M_lm[i, :] * wt_lm[i]
+            MA_lm[i, :] = M_lm[i, :] * wt_lm[i]
         fit_factor = wt_lm * np.ones((n_harm))
 
     # Fitting the sensitivity kernel from the input kernel
@@ -730,6 +734,11 @@ def calc_mascon(
             kern_lm, res, rnk, s = scipy.linalg.lstsq(
                 MA_lm, kern_i, lapack_driver=SOLVER
             )
+        elif SOLVER == 'ridge':
+            TM1 = np.dot(np.transpose(MA_lm), MA_lm)
+            ridge = np.eye(n_mas) * RIDGE_LAMBDA
+            TM2 = np.dot(np.transpose(MA_lm), kern_i)
+            kern_lm = np.dot(np.linalg.inv(TM1 + ridge), TM2)
         # calculate the sensitivity kernel for each mascon
         for k in range(n_mas):
             A_lm[i, k] = kern_lm[k] * total_area[k]
@@ -1124,7 +1133,7 @@ def arguments():
         help='Method for fitting sensitivity kernel to harmonics',
     )
     # least squares solver
-    choices = ('inv', 'lstsq', 'gelsd', 'gelsy', 'gelss')
+    choices = ('inv', 'lstsq', 'gelsd', 'gelsy', 'gelss', 'ridge')
     parser.add_argument(
         '--solver',
         '-s',
@@ -1132,6 +1141,13 @@ def arguments():
         default='lstsq',
         choices=choices,
         help='Least squares solver for sensitivity kernel solutions',
+    )
+    # ridge regression parameter
+    parser.add_argument(
+        '--ridge-lambda',
+        type=float,
+        default=0,
+        help='Ridge regression parameter for least squares solver',
     )
     # monthly files to be removed from the GRACE/GRACE-FO data
     parser.add_argument(
@@ -1257,6 +1273,7 @@ def main():
             REDISTRIBUTE_MASCONS=args.redistribute_mascons,
             FIT_METHOD=args.fit_method,
             SOLVER=args.solver,
+            RIDGE_LAMBDA=args.ridge_lambda,
             REMOVE_FILES=args.remove_file,
             REMOVE_FORMAT=args.remove_format,
             REDISTRIBUTE_REMOVED=args.redistribute_removed,
