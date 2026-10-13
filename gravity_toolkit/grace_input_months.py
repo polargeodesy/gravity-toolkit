@@ -109,7 +109,7 @@ PROGRAM DEPENDENCIES:
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
-    Updated 10/2026: added TN-15 for Release-07 C20/C30 SLR from GSFC 
+    Updated 10/2026: added TN-15 for Release-07 C20/C30 SLR from GSFC
     Updated 08/2026: use upstream file logger for verbose output
         save start and end date of files as numpy datetime64[s] arrays
     Updated 10/2023: standardize ocean model for UCI degree 1 coefficients
