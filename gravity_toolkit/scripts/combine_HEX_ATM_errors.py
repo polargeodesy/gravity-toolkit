@@ -378,19 +378,21 @@ def combine_HEX_ATM_errors(
 
     dim_flags = {
         'ERA-Interim': '',
-        'ERA5': '',
-        'MERRA-2': '',
+        'ERA5': '_WGT',
+        'MERRA-2': '_WGT',
         'NCEP-DOE-2': '',
         'NCEP-CFSR': '',
         'JRA-55': '',
+        'JRA-3Q': '_WGT',
     }
     RANGE = {
         'ERA-Interim': (4, 210),
-        'ERA5': (4, 251),
-        'MERRA-2': (4, 251),
+        'ERA5': (4, 294),
+        'MERRA-2': (4, 294),
         'NCEP-DOE-2': (4, 251),
         'NCEP-CFSR': (4, 227),
         'JRA-55': (4, 251),
+        'JRA-3Q': (4, 294)
     }
 
     # Gaussian smoothing string for radius RAD (if 0: no flag)
@@ -416,10 +418,10 @@ def combine_HEX_ATM_errors(
     ATM_reg = {}
     # allocate for total area of region
     area_reg = {}
-    # Read each spherical cap
-    for k in cap['ALL']:
-        # read reanalysis outputs
-        for m in MODEL:
+    # read reanalysis outputs
+    for m in MODEL:
+        # Read each spherical cap
+        for k in cap['ALL']:
             # use 3D geometry with the ERA-Interim and MERRA-2 reanalyses
             a2 = (m.upper(), dim_flags[m], '', LMAX, RANGE[m][0], RANGE[m][1])
             s2 = '{0}{1}{2}_SPH_CAP_MSCNS_L{3:d}_{4:03d}-{5:03d}'.format(*a2)
@@ -429,6 +431,7 @@ def combine_HEX_ATM_errors(
             # read atmospheric pressure anomalies and verify shape
             atm_file = base_dir.joinpath('reanalysis', m, s2, f2)
             ATM[m][k] = np.loadtxt(atm_file, ndmin=2)
+        print(atm_file)
 
     # date information
     start_mon = np.inf
@@ -484,9 +487,9 @@ def combine_HEX_ATM_errors(
             ATM_variance += (mm - ATM_mean) ** 2
         # RMS sum of reanalysis residuals components
         ATM_reg[i] = np.sqrt(ATM_variance / (len(MODEL) - 1.0))
-        # replace invalid values with nan
-        ind = np.ravel([np.flatnonzero(mon == m) for m in missing])
-        ATM_reg[i][ind] = np.nan
+        # # replace invalid values with nan
+        # ind = np.ravel([np.flatnonzero(mon == m) for m in missing])
+        # ATM_reg[i][ind] = np.nan
 
         # output data files
         # a = ('ATM_Differences',i,'3D_',ocean_str,LMAX,order_str,gw_str,ds_str)
@@ -539,13 +542,14 @@ def arguments():
         'NCEP-DOE-2',
         'NCEP-CFSR',
         'JRA-55',
+        'JRA-3Q',
     ]
     parser.add_argument(
         'model',
         metavar='MODEL',
         type=str,
         nargs='+',
-        default=['ERA5', 'MERRA-2', 'NCEP-DOE-2', 'JRA-55'],
+        default=['ERA5', 'MERRA-2', 'JRA-3Q'],
         choices=choices,
         help='Reanalysis Models',
     )

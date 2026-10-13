@@ -116,7 +116,7 @@ def arguments():
         metavar='DREL',
         type=str,
         default='RL06',
-        choices=['RL04', 'RL05', 'RL06'],
+        choices=['RL04', 'RL05', 'RL06', 'RL07'],
         help='GRACE/GRACE-FO data release',
     )
     # connection timeout

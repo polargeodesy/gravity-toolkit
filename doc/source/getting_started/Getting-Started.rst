@@ -21,6 +21,7 @@ use of `Jupyter Notebooks <../user_guide/Examples.html>`_.
     :align: center
 
     digraph {
+        bgcolor="transparent";
         G [label="GRACE/GRACE-FO\ntime-variable gravity"
             fontname="Lato"
             fontsize=11
