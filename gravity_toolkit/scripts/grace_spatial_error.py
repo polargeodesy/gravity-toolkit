@@ -48,9 +48,9 @@ COMMAND LINE OPTIONS:
         GFZ: GRACE/GRACE-FO coefficients from GFZ GravIS
     --interpolate-geocenter: Least-squares model missing Degree 1 coefficients
     --slr-c20 X: Replace C20 coefficients with SLR values
-        CSR: use values from CSR (TN-07,TN-09,TN-11)
+        CSR: use values from CSR (TN-07, TN-09, TN-11)
         GFZ: use values from GFZ
-        GSFC: use values from GSFC (TN-14)
+        GSFC: use values from GSFC (TN-14, TN-15)
     --slr-21 X: Replace C21 and S21 coefficients with SLR values
         CSR: use values from CSR
         GFZ: use values from GFZ GravIS
@@ -60,7 +60,7 @@ COMMAND LINE OPTIONS:
     --slr-c30 X: Replace C30 coefficients with SLR values
         CSR: use values from CSR (5x5 with 6,1)
         GFZ: use values from GFZ GravIS
-        GSFC: use values from GSFC (TN-14)
+        GSFC: use values from GSFC (TN-14, TN-15)
     --slr-c40 X: Replace C40 coefficients with SLR values
         CSR: use values from CSR (5x5 with 6,1)
         GSFC: use values from GSFC
