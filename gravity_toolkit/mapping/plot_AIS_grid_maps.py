@@ -532,7 +532,7 @@ def plot_grid(
         num=1,
         nrows=1,
         ncols=1,
-        figsize=(10, 7.5),
+        figsize=(5, 3.75),
         subplot_kw=dict(projection=projection),
     )
     # WGS84 Ellipsoid parameters
@@ -718,14 +718,14 @@ def plot_grid(
     # rasterized colorbar to remove lines
     cbar.solids.set_rasterized(True)
     # Add label to the colorbar
-    cbar.ax.set_ylabel(CBTITLE, labelpad=10, fontsize=24)
-    cbar.ax.set_title(CBUNITS, fontsize=24, va='bottom')
+    cbar.ax.set_ylabel(CBTITLE, labelpad=7, fontsize=13)
+    cbar.ax.set_title(CBUNITS, fontsize=13, y=1.02, va='bottom')
     # Set the tick levels for the colorbar
     cbar.set_ticks(levels)
     cbar.set_ticklabels([CBFORMAT.format(ct) for ct in levels])
     # ticks lines all the way across
     cbar.ax.tick_params(
-        which='both', width=1, length=23, labelsize=24, direction='in'
+        which='both', width=1, length=12, labelsize=13, direction='in'
     )
 
     # x and y limits, axis = equal
@@ -738,7 +738,7 @@ def plot_grid(
 
     # add main title
     if TITLE is not None:
-        ax1.set_title(TITLE.replace('-', '\u2013'), fontsize=24)
+        ax1.set_title(TITLE.replace('-', '\u2013'), fontsize=13)
     # Add figure label
     if LABEL is not None:
         if BASEMAP:
@@ -747,7 +747,7 @@ def plot_grid(
                 loc=2,
                 pad=0,
                 frameon=True,
-                prop=dict(size=24, weight='bold'),
+                prop=dict(size=13, weight='bold'),
             )
             at.patch.set_boxstyle('Square,pad=0.25')
             at.patch.set_edgecolor('white')
@@ -757,13 +757,13 @@ def plot_grid(
                 loc=2,
                 pad=0,
                 frameon=False,
-                prop=dict(size=24, weight='bold'),
+                prop=dict(size=13, weight='bold'),
             )
         ax1.axes.add_artist(at)
 
     # draw map scale to corners
     if DRAW_SCALE:
-        add_plot_scale(ax1, -295e4, -236e4, 1000e3, 85e3, False)
+        add_plot_scale(ax1, -292e4, -220e4, 1600e3, 140e3, False)
     # stronger linewidth on frame
     ax1.spines['geo'].set_linewidth(2.0)
     ax1.spines['geo'].set_zorder(10)

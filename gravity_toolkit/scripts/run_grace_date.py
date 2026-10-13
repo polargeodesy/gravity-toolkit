@@ -93,7 +93,7 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
         'RL05': ['GAC', 'GAD', 'GSM'],
         'RL06': ['GAC', 'GAD', 'GSM'],
     }
-    VALID['CSR'] = ['RL04', 'RL05', 'RL06']
+    VALID['CSR'] = ['RL04', 'RL05', 'RL06', 'RL07']
     # GFZ RL04/5 at LMAX 90
     # GFZ RL06 at LMAX 60
     DSET['GFZ'] = {
@@ -101,14 +101,14 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
         'RL05': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL06': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
     }
-    VALID['GFZ'] = ['RL04', 'RL05', 'RL06']
+    VALID['GFZ'] = ['RL04', 'RL05', 'RL06', 'RL07']
     # JPL RL04/5/6 at LMAX 60
     DSET['JPL'] = {
         'RL04': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL05': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL06': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
     }
-    VALID['JPL'] = ['RL04', 'RL05', 'RL06']
+    VALID['JPL'] = ['RL04', 'RL05', 'RL06', 'RL07']
 
     # for each processing center
     for p in PROC:

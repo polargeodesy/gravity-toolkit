@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 utilities.py
-Written by Tyler Sutterley (08/2026)
+Written by Tyler Sutterley (10/2026)
 Download and management utilities for syncing files
 
 PYTHON DEPENDENCIES:
@@ -11,6 +11,7 @@ PYTHON DEPENDENCIES:
         https://pypi.org/project/platformdirs/
 
 UPDATE HISTORY:
+    Updated 10/2026: added CMR shortname for GRACE Release-07 (reprocessed)
     Updated 08/2026: added function to build file loggers
         added function to write log files for valid and failed program runs
         use logging.LoggerAdapter to include parent filenames in logs
@@ -1887,6 +1888,7 @@ def cmr_product_shortname(
     # format of GRACE/GRACE-FO shortnames
     grace_l1_format = 'GRACE_{0}_GRAV_{1}_{2}'
     grace_l2_format = 'GRACE_{0}_{1}_GRAV_{2}_{3}'
+    grace_l2_repro_format = 'GRACE_{0}_{1}_MONTHLY_{2}{3}'
     gracefo_l1_format = 'GRACEFO_{0}_{1}_GRAV_{2}_{3}'
     gracefo_l2_format = 'GRACEFO_{0}_{1}_MONTHLY_{2}{3}'
     # dictionary entries for each product level
@@ -1932,6 +1934,14 @@ def cmr_product_shortname(
                 shortname = grace_l2_format.format(p, 'L2', c, rl)
                 cmr_shortname['grace']['L2'][c][rl].append(shortname)
 
+    # dictionary entries for reprocessed GRACE Level-2 products
+    # for each data release (RL07+)
+    for rl in ['RL07']:
+        rs = re.findall(r'\d+', rl).pop().zfill(3)
+        for c in ['CSR', 'GFZ', 'JPL']:
+            shortname = grace_l2_repro_format.format('L2', c, rs, version)
+            cmr_shortname['grace']['L2'][c][rl] = [shortname]
+
     # dictionary entries for GRACE-FO Level-1 ranging data products
     # for each data release
     for rl in ['RL04']:
@@ -1941,7 +1951,7 @@ def cmr_product_shortname(
 
     # dictionary entries for GRACE-FO Level-2 products
     # for each data release
-    for rl in ['RL06']:
+    for rl in ['RL06', 'RL07']:
         rs = re.findall(r'\d+', rl).pop().zfill(3)
         for c in ['CSR', 'GFZ', 'JPL']:
             shortname = gracefo_l2_format.format('L2', c, rs, version)
