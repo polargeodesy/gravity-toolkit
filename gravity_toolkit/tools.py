@@ -187,7 +187,7 @@ class widgets:
         # dropdown menu for setting data release
         self.release = ipywidgets.Dropdown(
             description='Release:',
-            options=['RL04', 'RL05', 'RL06'],
+            options=['RL04', 'RL05', 'RL06', 'RL07'],
             value=self.defaults[1],
             disabled=False,
             style=self.style,
@@ -238,7 +238,7 @@ class widgets:
         if self.center.value == 'CNES':
             releases = ['RL01', 'RL02', 'RL03', 'RL04', 'RL05']
         else:
-            releases = ['RL04', 'RL05', 'RL06']
+            releases = ['RL04', 'RL05', 'RL06', 'RL07']
         self.release.options = releases
         self.release.value = releases[-1]
 
