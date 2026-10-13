@@ -41,6 +41,8 @@ def test_podaac_cumulus_download_and_read(username, password):
         pytest.xfail(exc.reason)
     except (EOFError, gravtk.utilities.urllib2.URLError) as exc:
         pytest.xfail('NASA Earthdata Login Error')
+    except ConnectionResetError as exc:
+        pytest.xfail(exc.reason)
     # read as virtual file object
     Ylms = gravtk.read_GRACE_harmonics(FILE, 60)
     keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm', 'header']
@@ -65,6 +67,8 @@ def test_gfz_http_download_and_read():
         # download and read as virtual file object
         FILE = gravtk.utilities.from_http(HOST, verbose=True)
     except gravtk.utilities.urllib2.HTTPError as exc:
+        pytest.xfail(exc.reason)
+    except ConnectionResetError as exc:
         pytest.xfail(exc.reason)
     # read as virtual file object
     Ylms = gravtk.read_GRACE_harmonics(FILE, 60)
@@ -92,6 +96,8 @@ def test_gfz_ftp_download_and_read():
         FILE = gravtk.utilities.from_ftp(HOST, verbose=True)
     except gravtk.utilities.urllib2.HTTPError as exc:
         pytest.xfail(exc.reason)
+    except ConnectionResetError as exc:
+        pytest.xfail(exc.reason)
     # read as virtual file object
     Ylms = gravtk.read_GRACE_harmonics(FILE, 60)
     keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm', 'header']
@@ -116,6 +122,8 @@ def test_gfz_icgem_costg_download_and_read():
         FILE = gravtk.utilities.from_http(HOST, verbose=True)
     except gravtk.utilities.urllib2.HTTPError as exc:
         pytest.xfail(exc.reason)
+    except ConnectionResetError as exc:
+        pytest.xfail(exc.reason)
     # read as virtual file object
     Ylms = gravtk.read_GRACE_harmonics(FILE, 60)
     keys = ['time', 'start', 'end', 'clm', 'slm', 'eclm', 'eslm', 'header']
@@ -139,6 +147,8 @@ def test_esa_swarm_download_and_read():
         # download as local file object
         gravtk.utilities.from_http(remote_file, local=swarm_file, verbose=True)
     except gravtk.utilities.urllib2.HTTPError as exc:
+        pytest.xfail(exc.reason)
+    except ConnectionResetError as exc:
         pytest.xfail(exc.reason)
     # read the local file
     swarm_file = pathlib.Path(swarm_file).absolute()
@@ -169,6 +179,8 @@ def test_itsg_graz_download_and_read():
         # download as local file object
         gravtk.utilities.from_http(HOST, local=HOST[-1], verbose=True)
     except gravtk.utilities.urllib2.HTTPError as exc:
+        pytest.xfail(exc.reason)
+    except ConnectionResetError as exc:
         pytest.xfail(exc.reason)
     # read the local file
     itsg_file = pathlib.Path(HOST[-1]).absolute()
