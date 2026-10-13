@@ -92,6 +92,7 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
         'RL04': ['GAC', 'GAD', 'GSM'],
         'RL05': ['GAC', 'GAD', 'GSM'],
         'RL06': ['GAC', 'GAD', 'GSM'],
+        'RL07': ['GAC', 'GAD', 'GSM'],
     }
     VALID['CSR'] = ['RL04', 'RL05', 'RL06', 'RL07']
     # GFZ RL04/5 at LMAX 90
@@ -100,6 +101,7 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
         'RL04': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL05': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL06': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
+        'RL07': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
     }
     VALID['GFZ'] = ['RL04', 'RL05', 'RL06', 'RL07']
     # JPL RL04/5/6 at LMAX 60
@@ -107,6 +109,7 @@ def run_grace_date(base_dir, PROC, DREL, VERBOSE=0, MODE=0o775):
         'RL04': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL05': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
         'RL06': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
+        'RL07': ['GAA', 'GAB', 'GAC', 'GAD', 'GSM'],
     }
     VALID['JPL'] = ['RL04', 'RL05', 'RL06', 'RL07']
 
