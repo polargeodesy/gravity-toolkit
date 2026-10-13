@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 grace_input_months.py
-Written by Tyler Sutterley (08/2026)
+Written by Tyler Sutterley (10/2026)
 Contributions by Hugo Lecomte and Yara Mohajerani
 
 Reads GRACE/GRACE-FO files for a specified spherical harmonic degree and order
@@ -35,9 +35,9 @@ INPUTS:
     missing: missing months to not consider in analysis
     SLR_C20: Replaces C20 with SLR values
         N: use original values
-        CSR: use values from CSR (TN-07,TN-09,TN-11)
+        CSR: use values from CSR (TN-07, TN-09, TN-11)
         GFZ: use values from GFZ
-        GSFC: use values from GSFC (TN-14)
+        GSFC: use values from GSFC (TN-14, TN-15)
     DEG1: Use Degree 1 coefficients
         None: No degree 1
         Tellus: GRACE/GRACE-FO TN-13 coefficients from PO.DAAC
@@ -78,7 +78,7 @@ OPTIONS:
         None: use original values
         CSR: use values from CSR (5x5 with 6,1)
         GFZ: use values from GFZ GravIS
-        GSFC: use values from GSFC (TN-14)
+        GSFC: use values from GSFC (TN-14, TN-15)
     SLR_C50: replaces C50 with SLR values
         None: use original values
         CSR: use values from CSR (5x5 with 6,1)
@@ -109,6 +109,7 @@ PROGRAM DEPENDENCIES:
     read_gfc_harmonics.py: reads spherical harmonic data from gfc files
 
 UPDATE HISTORY:
+    Updated 10/2026: added TN-15 for Release-07 C20/C30 SLR from GSFC
     Updated 08/2026: use upstream file logger for verbose output
         save start and end date of files as numpy datetime64[s] arrays
     Updated 10/2023: standardize ocean model for UCI degree 1 coefficients
@@ -145,7 +146,7 @@ UPDATE HISTORY:
     Updated 09/2019: edit exception for degree 1 if no matching month is found
     Updated 08/2019: added LARES C30 from John Ries (C30_LARES_filtered.txt)
         added exceptions for C20, C30 and degree 1 if no matching month is found
-    Updated 07/2019: added option for reading SLR C30 data (TN-14)
+    Updated 07/2019: added option for reading SLR C30 data (TN-14, TN-15)
         added option DEG1_GIA to set the GIA used when calculating geocenter
     Updated 11/2018: split atmospheric jump corrections into a separate function
     Updated 10/2018: decode gzip read for python3 Compatibility
@@ -254,7 +255,7 @@ def grace_input_months(
             - ``None``: use original values
             - ``'CSR'``: use values from CSR (TN-07, TN-09, TN-11)
             - ``'GFZ'``: use values from GFZ
-            - ``'GSFC'``: use values from GSFC (TN-14)
+            - ``'GSFC'``: use values from GSFC (TN-14, TN-15)
     DEG1: str
         Use Degree 1 coefficients
 
@@ -285,7 +286,7 @@ def grace_input_months(
             - ``None``: use original values
             - ``'CSR'``: use values from CSR (5x5 with 6,1)
             - ``'GFZ'``: use values from GFZ GravIS
-            - ``'GSFC'``: use values from GSFC (TN-14)
+            - ``'GSFC'``: use values from GSFC (TN-14, TN-15)
     SLR_C40: str or NoneType, default ''
         Replace C40 with SLR values
 
@@ -453,7 +454,10 @@ def grace_input_months(
         FLAGS.append('_wGFZ_C20')
         attributes['SLR C20'] = ('GFZ', SLR_file.name)
     elif SLR_C20 == 'GSFC':
-        SLR_file = base_dir.joinpath('TN-14_C30_C20_GSFC_SLR.txt')
+        if DREL == 'RL06':
+            SLR_file = base_dir.joinpath('TN-14_C30_C20_GSFC_SLR.txt')
+        elif DREL == 'RL07':
+            SLR_file = base_dir.joinpath('TN-15_C30_C20_GSFC_SLR.txt')
         # log SLR file if debugging
         logger.debug(f'Reading SLR C20 file: {str(SLR_file)}')
         # read SLR file
@@ -538,7 +542,10 @@ def grace_input_months(
         FLAGS.append('_wGFZ_C30')
         attributes['SLR C30'] = ('GFZ GravIS', SLR_file.name)
     elif kwargs['SLR_C30'] == 'GSFC':
-        SLR_file = base_dir.joinpath('TN-14_C30_C20_GSFC_SLR.txt')
+        if DREL == 'RL06':
+            SLR_file = base_dir.joinpath('TN-14_C30_C20_GSFC_SLR.txt')
+        elif DREL == 'RL07':
+            SLR_file = base_dir.joinpath('TN-15_C30_C20_GSFC_SLR.txt')
         # log SLR file if debugging
         logger.debug(f'Reading SLR C30 file: {str(SLR_file)}')
         # read SLR file

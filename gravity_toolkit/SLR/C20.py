@@ -10,6 +10,7 @@ Dataset distributed by NASA PO.DAAC
     TN-07_C20_SLR.txt
     TN-11_C20_SLR.txt
     TN-14_C30_C30_GSFC_SLR.txt
+    TN-15_C30_C30_GSFC_SLR.txt
 Dataset distributed by UTCSR
     C20_RL05.txt
 Datasets distributed by GFZ
@@ -296,7 +297,7 @@ def C20(SLR_file, AOD=True, HEADER=True):
         for key, val in dinput.items():
             dinput[key] = val[:t]
 
-    elif bool(re.search(r'TN-(11|14)', SLR_file.name, re.I)):
+    elif bool(re.search(r'TN-(11|14|15)', SLR_file.name, re.I)):
         # SLR C20 RL06 file from PO.DAAC
         with SLR_file.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
