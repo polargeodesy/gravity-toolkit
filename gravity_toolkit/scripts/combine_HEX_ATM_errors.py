@@ -392,7 +392,7 @@ def combine_HEX_ATM_errors(
         'NCEP-DOE-2': (4, 251),
         'NCEP-CFSR': (4, 227),
         'JRA-55': (4, 251),
-        'JRA-3Q': (4, 294)
+        'JRA-3Q': (4, 294),
     }
 
     # Gaussian smoothing string for radius RAD (if 0: no flag)
