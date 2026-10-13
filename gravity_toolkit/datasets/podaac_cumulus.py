@@ -198,11 +198,11 @@ def podaac_cumulus(
                         response, mtime, local_file, CLOBBER=CLOBBER, MODE=MODE
                     )
 
-                # TN-14 SLR C2,0 and C3,0 files
+                # TN-14/TN-15 SLR C2,0 and C3,0 files
                 try:
                     (url,) = [url for url in urls if R2.search(url)]
                 except ValueError as exc:
-                    logger.info('No TN-14 Files Available')
+                    logger.info('No TN-14/TN-15 Files Available')
                     url = None
                 else:
                     granule = gravtk.utilities.url_split(url)[-1]

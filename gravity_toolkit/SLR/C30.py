@@ -7,6 +7,7 @@ Reads monthly degree 3 zonal spherical harmonic data files from SLR
 
 Dataset distributed by NASA PO.DAAC
     TN-14_C30_C30_GSFC_SLR.txt
+    TN-15_C30_C30_GSFC_SLR.txt
     CSR_Monthly_5x5_Gravity_Harmonics.txt
 Dataset distributed by GFZ
     GRAVIS-2B_GFZOP_GRACE+SLR_LOW_DEGREES_0002.dat
@@ -119,7 +120,7 @@ def C30(SLR_file, C30_MEAN=9.5717395773300e-07, HEADER=True):
     # output dictionary with data variables
     dinput = {}
     # determine source of input file
-    if bool(re.search(r'TN-(14)', SLR_file.name, re.I)):
+    if bool(re.search(r'TN-(14|15)', SLR_file.name, re.I)):
         # SLR C30 RL06 file from PO.DAAC produced by GSFC
         with SLR_file.open(mode='r', encoding='utf8') as f:
             file_contents = f.read().splitlines()
